@@ -1,0 +1,62 @@
+STACKBRIDGE INCIDENT LOG
+========================
+(we really should use a proper tool for this)
+
+2024-01-08
+prod down for 2 hours. jake restarted the server. cause: unknown. 
+customers complained. we sent an apology email.
+
+2024-01-22
+db disk almost full. jake deleted some old logs. 
+added a reminder to clean up monthly. (nobody has done this)
+
+2024-02-03  
+deploy broke prod. someone pushed directly to main and it had a syntax error.
+jake SSHed in and fixed it. took 45 mins.
+we should probably have staging. 
+
+2024-02-19
+staging has same db as prod (discovered this by accident when a test wiped some orders).
+TODO: fix this
+
+2024-03-01
+jake left the company.
+nobody knows the server password except jake.
+we found the PEM file in the shared drive.
+redis password: there is no password (jake said it was "internal only")
+
+2024-03-14
+prod down again. server ran out of memory.
+solution: restarted the server. 
+root cause: the app leaks memory, nobody knows why.
+workaround: cron job to restart the app every night at 2am.
+
+2024-03-28
+someone ran the seed script against prod.
+all orders were deleted. backup was from 3 weeks ago.
+lost about 3 weeks of order data.
+jake's manual backup schedule was "every friday" but he had not done it since he resigned.
+current backup situation: none.
+
+2024-04-10
+new developer tried to update the schema.
+ran ALTER TABLE directly on prod during business hours.
+locked the orders table for 8 minutes.
+all orders API calls failed during this time.
+
+2024-04-15
+marketing asked for a dashboard showing order volumes.
+we gave them direct read access to the production database.
+they are running queries against prod.
+
+CURRENT KNOWN ISSUES (as of today):
+- no monitoring except "check if the site loads"
+- no alerting
+- one server, no redundancy
+- backups: occasional and manual
+- deploy process: SSH and pray
+- on call: whoever sees the slack message first
+- database access: shared admin credentials
+- staging: exists but shares prod db
+- secrets: hardcoded in the codebase
+- the /internal/debug endpoint is live in prod and returns the db password
