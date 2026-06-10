@@ -1,0 +1,141 @@
+# StackBridge Service Catalogue
+# ================================
+# Source of truth for all services running on the StackBridge platform.
+# Every service must have a complete entry here before being deployed to staging or prod.
+# Schema: catalogue/schema.json
+# Last audit: 2026-06-08
+
+services:
+
+  - name: Orders API
+    id: orders-api
+    description: >
+      Core REST API for creating, reading, and managing customer orders.
+      Used by the storefront, the mobile app, and the marketing analytics pipeline.
+    owner:
+      team: Platform (interim owner — original team had no assigned owner)
+      slack_channel: "#platform"
+      email: platform@stackbridge.io
+    tier: tier-1
+    language: Python (Flask)
+    repository: https://github.com/stackbridge/stackbridge
+    environments:
+      dev:
+        url: http://10.1.0.10:5000
+        deployed_version: unknown
+        last_deployed: null
+      staging:
+        url: http://10.2.0.10:5000
+        deployed_version: unknown
+        last_deployed: null
+      prod:
+        url: http://54.123.456.78:5000   # NOTE: static IP needed (OPS-07)
+        deployed_version: unknown
+        last_deployed: null
+    slo:
+      availability_target_pct: 99.5
+      latency_p95_ms: 500
+      error_rate_threshold_pct: 1.0
+      error_budget_policy: >
+        When error budget is 50% consumed in a rolling 30-day window, a reliability
+        review is triggered and no new features ship until budget is restored.
+        When budget is fully exhausted, a freeze is declared until the SLO is met
+        for 24 consecutive hours.
+    health_endpoint: /health
+    runbook_url: https://github.com/stackbridge/stackbridge/blob/main/docs/runbooks/orders-api.md
+    on_call:
+      rotation: platform-oncall
+      escalation_path:
+        - "#platform (Slack)"
+        - "Engineering Manager (PagerDuty)"
+        - "CTO"
+    dependencies:
+      - postgres-db
+    last_updated: "2026-06-08"
+
+  - name: PostgreSQL Database
+    id: postgres-db
+    description: >
+      Shared PostgreSQL 15 instance hosting all StackBridge application data.
+      All product services read and write through the Orders API — no direct
+      DB access for application teams except via the read replica for analytics.
+    owner:
+      team: Platform
+      slack_channel: "#platform"
+      email: platform@stackbridge.io
+    tier: tier-1
+    language: PostgreSQL 15
+    repository: https://github.com/stackbridge/stackbridge
+    environments:
+      dev:
+        url: postgres://10.1.0.20:5432/stackbridge
+        deployed_version: "15.4"
+        last_deployed: null
+      staging:
+        url: postgres://10.2.0.20:5432/stackbridge
+        deployed_version: "15.4"
+        last_deployed: null
+      prod:
+        url: "RDS endpoint — see Secrets Manager: stackbridge/prod/db-password"
+        deployed_version: "15.4"
+        last_deployed: null
+    slo:
+      availability_target_pct: 99.9
+      latency_p95_ms: 50
+      error_rate_threshold_pct: 0.1
+      error_budget_policy: >
+        Any budget consumption triggers immediate platform team review.
+        DB incidents are always treated as P1 regardless of time of day.
+    health_endpoint: /health  # monitored via pg_isready probe, not HTTP
+    runbook_url: https://github.com/stackbridge/stackbridge/blob/main/docs/runbooks/database.md
+    on_call:
+      rotation: platform-oncall
+      escalation_path:
+        - "#platform (Slack)"
+        - "On-call DBA (PagerDuty)"
+        - "Engineering Manager"
+    dependencies: []
+    last_updated: "2026-06-08"
+
+  - name: Redis Cache
+    id: redis-cache
+    description: >
+      Redis 6 instance used by the marketing team for analytics caching and
+      session buffering. Currently has no authentication (SEC-09 — fix in Phase 1).
+      Not used by the Orders API in production at this time.
+    owner:
+      team: Platform (interim — was provisioned by marketing without an owner)
+      slack_channel: "#platform"
+      email: platform@stackbridge.io
+    tier: tier-3
+    language: Redis 6
+    repository: https://github.com/stackbridge/stackbridge
+    environments:
+      dev:
+        url: redis://10.1.0.30:6379
+        deployed_version: "6.2"
+        last_deployed: null
+      staging:
+        url: redis://10.2.0.30:6379
+        deployed_version: "6.2"
+        last_deployed: null
+      prod:
+        url: redis://internal-host:6379  # no auth — SEC-09 must be fixed before prod use
+        deployed_version: "6.2"
+        last_deployed: null
+    slo:
+      availability_target_pct: 99.0
+      latency_p95_ms: 10
+      error_rate_threshold_pct: 2.0
+      error_budget_policy: >
+        Tier-3 service. Budget exhaustion triggers a next-sprint review.
+        No deployment freeze. Marketing team notified when budget is consumed.
+    health_endpoint: /health  # monitored via redis-cli PING
+    runbook_url: https://github.com/stackbridge/stackbridge/blob/main/docs/runbooks/redis.md
+    on_call:
+      rotation: platform-oncall
+      escalation_path:
+        - "#platform (Slack)"
+        - "Engineering Manager"
+    dependencies: []
+    last_updated: "2026-06-08"
