@@ -29,7 +29,7 @@ resource "aws_db_subnet_group" "this" {
 # ── Security group: only the app security group can connect ──
 resource "aws_security_group" "db" {
   name        = "${var.name}-${var.environment}-db-sg"
-  description = "Database security group — accepts connections from app tier only"
+  description = "Database security group - accepts connections from app tier only"
   vpc_id      = var.vpc_id
 
   ingress {
