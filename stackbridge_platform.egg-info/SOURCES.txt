@@ -1,0 +1,16 @@
+setup.py
+commands/__init__.py
+commands/create.py
+commands/destroy.py
+commands/status.py
+stackbridge/__init__.py
+stackbridge/cli.py
+stackbridge_platform.egg-info/PKG-INFO
+stackbridge_platform.egg-info/SOURCES.txt
+stackbridge_platform.egg-info/dependency_links.txt
+stackbridge_platform.egg-info/entry_points.txt
+stackbridge_platform.egg-info/requires.txt
+stackbridge_platform.egg-info/top_level.txt
+utils/__init__.py
+utils/aws.py
+utils/terraform.py
