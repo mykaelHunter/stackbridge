@@ -1,6 +1,31 @@
+# Python
 .venv/
 __pycache__/
 *.pyc
-*.tfstate
-*.tfstate.backup
+*.egg-info/
+dist/
+build/
+
+# Terraform
 .terraform/
+*.tfstate
+*.tfstate.*
+terraform.tfvars
+
+# macOS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# Plans
+tfplan
+*.plan
+
+# Environment files
+.env
+.env.*

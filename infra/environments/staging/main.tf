@@ -1,0 +1,123 @@
+# ============================================================
+# Environment: staging
+# Closer to prod than dev: NAT gateway on, larger instances,
+# longer backup retention. Still no multi-AZ (cost).
+# Staging and prod NEVER share a database — fixed from audit.
+# ============================================================
+
+terraform {
+  required_version = ">= 1.6.0"
+
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+  }
+
+  backend "s3" {
+    bucket         = "stackbridge-tf-state"
+    key            = "environments/staging/terraform.tfstate"
+    region         = "us-east-1"
+    dynamodb_table = "stackbridge-tf-lock"
+    encrypt        = true
+  }
+}
+
+provider "aws" {
+  region = var.aws_region
+
+  default_tags {
+    tags = local.common_tags
+  }
+}
+
+locals {
+  environment = "staging"
+  name        = "stackbridge"
+
+  common_tags = {
+    Environment = local.environment
+    Project     = local.name
+    Owner       = var.owner
+    ManagedBy   = "terraform"
+    CostCenter  = var.cost_center
+  }
+}
+
+module "network" {
+  source = "../../modules/network"
+
+  name                = local.name
+  environment         = local.environment
+  vpc_cidr            = "10.2.0.0/16"
+  availability_zones  = ["us-east-1a", "us-east-1b"]
+  nat_gateway_enabled = true
+  tags                = local.common_tags
+}
+
+module "compute" {
+  source = "../../modules/compute"
+
+  name          = local.name
+  environment   = local.environment
+  vpc_id        = module.network.vpc_id
+  subnet_id     = module.network.private_subnet_ids[0]
+  ami_id        = var.ami_id
+  instance_type = "t3.small"
+  tags          = local.common_tags
+
+  ingress_rules = [
+    {
+      description = "HTTP from within VPC only"
+      from_port   = 5000
+      to_port     = 5000
+      protocol    = "tcp"
+      cidr_blocks = [module.network.vpc_cidr]
+    }
+  ]
+}
+
+module "database" {
+  source = "../../modules/database"
+
+  name                  = local.name
+  environment           = local.environment
+  vpc_id                = module.network.vpc_id
+  private_subnet_ids    = module.network.private_subnet_ids
+  app_security_group_id = module.compute.security_group_id
+  instance_class        = "db.t3.small"
+  backup_retention_days = 7
+  multi_az              = false
+  deletion_protection   = true
+  tags                  = local.common_tags
+}
+
+module "storage" {
+  source = "../../modules/storage"
+
+  name        = local.name
+  environment = local.environment
+  purpose     = "uploads"
+  tags        = local.common_tags
+}
+
+output "vpc_id" {
+  value = module.network.vpc_id
+}
+
+output "app_instance_id" {
+  value = module.compute.instance_id
+}
+
+output "db_endpoint" {
+  value = module.database.db_endpoint
+}
+
+output "db_secret_arn" {
+  value = module.database.secret_arn
+}
+
+output "uploads_bucket" {
+  value = module.storage.bucket_id
+}

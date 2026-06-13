@@ -1,0 +1,49 @@
+version: "3.8"
+
+# this is what we actually use to run things locally
+# for prod we SSH in and run docker manually
+# TODO: automate this
+
+services:
+
+  db:
+    image: postgres:13
+    environment:
+      POSTGRES_DB: stackbridge
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin1234
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+      - pgdata:/var/lib/postgresql/data
+    # no health check, it usually just works
+
+  app:
+    build: ./app
+    ports:
+      - "5000:5000"
+    environment:
+      DB_HOST: db
+      DB_USER: admin
+      DB_PASS: admin1234
+      SECRET_KEY: supersecretkey123
+    depends_on:
+      - db
+    # restart: always  # turned off because it hid crashes
+
+  # added this for the marketing team, they wanted analytics
+  redis:
+    image: redis:6
+    ports:
+      - "6379:6379"
+    # no password, internal only
+
+  # adminer - useful for prod debugging, should probably remove
+  adminer:
+    image: adminer
+    ports:
+      - "8080:8080"
+
+volumes:
+  pgdata:
