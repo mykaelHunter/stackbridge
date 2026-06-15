@@ -12,6 +12,6 @@ spec:
     - /bin/sh
     - -c
     - |
-      echo "Deleting 2 pods from stackbridge-demo..."
-      kubectl get pods -n default -l app=stackbridge-demo -o name | head -2 | xargs kubectl delete -n default
+      echo "Deleting 2 pods from stackbridge-flask..."
+      kubectl get pods -n default -l app=stackbridge-flask -o name | head -2 | xargs kubectl delete -n default
       echo "Pods deleted. Watch recovery with: kubectl get pods -n default -w"
