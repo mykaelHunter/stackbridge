@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: chaos-az-failure
+  namespace: default
+spec:
+  restartPolicy: Never
+  containers:
+  - name: chaos
+    image: bitnami/kubectl:latest
+    command:
+    - /bin/sh
+    - -c
+    - |
+      echo "=== AZ Failure Simulation ==="
+      echo "Simulating AZ failure by cordoning node..."
+      NODE=$(kubectl get nodes -o name | head -1)
+      kubectl cordon $NODE
+      kubectl taint nodes $NODE failure=az-down:NoSchedule
+      echo "Node cordoned. Checking rollout recovery..."
+      sleep 15
+      kubectl get rollouts -n default | grep flask
+      echo "Cleaning up..."
+      kubectl uncordon $NODE
+      kubectl taint nodes $NODE failure=az-down:NoSchedule-
+      echo "AZ failure simulation complete."

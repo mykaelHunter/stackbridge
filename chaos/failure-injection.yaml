@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: chaos-failure-injection
+  namespace: default
+spec:
+  restartPolicy: Never
+  containers:
+  - name: chaos
+    image: bitnami/kubectl:latest
+    command:
+    - /bin/sh
+    - -c
+    - |
+      echo "=== Failure Injection Tests ==="
+      echo "Test 1: Delete a Flask pod"
+      kubectl delete pod -n default -l app=stackbridge-flask --limit=1
+      sleep 5
+      echo "Test 2: Check freeze policy"
+      kubectl get configmap deployment-freeze-policy -n argocd
+      echo "Failure injection complete."

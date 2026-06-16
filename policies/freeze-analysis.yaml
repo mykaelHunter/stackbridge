@@ -1,0 +1,45 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: freeze-check
+  namespace: default
+spec:
+  args:
+  - name: freeze-configmap
+    value: deployment-freeze-policy
+  - name: freeze-namespace
+    value: argocd
+  metrics:
+  - name: check-freeze
+    interval: 30s
+    successCondition: result == "false"
+    failureLimit: 1
+    provider:
+      job:
+        spec:
+          backoffLimit: 0
+          template:
+            spec:
+              serviceAccountName: argo-rollouts
+              restartPolicy: Never
+              containers:
+              - name: checker
+                image: bitnami/kubectl:latest
+                command:
+                - /bin/sh
+                - -c
+                - |
+                  FROZEN=$(kubectl get configmap ${ARGS_freeze-configmap} -n ${ARGS_freeze-namespace} -o jsonpath='{.data.frozen}')
+                  if [ "$FROZEN" = "true" ]; then
+                    echo "Deployment freeze is ACTIVE - blocking rollout"
+                    exit 1
+                  else
+                    echo "No freeze active - rollout allowed"
+                    echo "false"
+                    exit 0
+                  fi
+                env:
+                - name: ARGS_freeze-configmap
+                  value: "{{args.freeze-configmap}}"
+                - name: ARGS_freeze-namespace
+                  value: "{{args.freeze-namespace}}"
