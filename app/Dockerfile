@@ -22,6 +22,8 @@ WORKDIR /build
 COPY requirements.txt .
 RUN pip install --no-cache-dir --quiet "pip==24.0" && \
     pip install --no-cache-dir --quiet --prefix=/install -r requirements.txt
+    pip install --no-cache-dir --upgrade pip setuptools wheel
+
 
 # ── Stage 2: final runtime image ──────────────────────────────
 FROM python:3.11-slim AS runtime
