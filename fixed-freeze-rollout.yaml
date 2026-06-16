@@ -1,0 +1,37 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: stackbridge-flask-freeze
+  namespace: default
+spec:
+  replicas: 5
+  selector:
+    matchLabels:
+      app: stackbridge-flask-freeze
+  template:
+    metadata:
+      labels:
+        app: stackbridge-flask-freeze
+    spec:
+      containers:
+      - name: stackbridge-app
+        image: localhost:32000/stackbridge:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 5000
+        env:
+        - name: FLASK_APP
+          value: "app.py"
+        - name: FLASK_ENV
+          value: "production"
+  strategy:
+    canary:
+      steps:
+      - setWeight: 33
+      - pause: {duration: 10s}
+      - setWeight: 66
+      - pause: {duration: 10s}
+      - setWeight: 100
+      analysis:
+        templates:
+        - templateName: freeze-check

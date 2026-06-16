@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: deployment-freeze-policy
+  namespace: argocd
+data:
+  frozen: "false"
+  schedule: |
+    - name: "Christmas 2026"
+      start: "2026-12-24T00:00:00Z"
+      end: "2026-12-26T23:59:59Z"
+      reason: "Holiday freeze"
+    - name: "Black Friday"
+      start: "2026-11-27T00:00:00Z"
+      end: "2026-11-28T00:00:00Z"
+      reason: "Peak traffic"
+    - name: "Weekend night (test)"
+      start: "2026-06-14T20:00:00Z"
+      end: "2026-06-15T06:00:00Z"
+      reason: "Test freeze window"
