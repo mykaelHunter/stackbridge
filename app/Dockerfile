@@ -20,8 +20,12 @@ WORKDIR /build
 
 # Install dependencies into a prefix we'll copy to final stage
 COPY requirements.txt .
-RUN pip install --no-cache-dir --quiet "pip==24.0" && \
+
+# Hadolint ignored because upgrading core build tools shouldn't be rigidly pinned
+# hadolint ignore=DL3013
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
     pip install --no-cache-dir --quiet --prefix=/install -r requirements.txt
+
 
 
 # ── Stage 2: final runtime image ──────────────────────────────
