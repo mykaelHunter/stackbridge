@@ -12,8 +12,7 @@
 # ============================================================
 
 # ── Stage 1: dependency builder ───────────────────────────────
-# Fixed: Actually pinned the base image to a specific SHA256 digest for true reproducibility
-FROM python:3.11-slim@sha256:923363496bc75ad4f7b4946328328114243b17409dae69eb9ee6cfbc82944cfb AS builder
+FROM python:3.11-slim AS builder
 
 WORKDIR /build
 
@@ -27,7 +26,7 @@ RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
 
 
 # ── Stage 2: final runtime image ──────────────────────────────
-FROM python:3.11-slim@sha256:923363496bc75ad4f7b4946328328114243b17409dae69eb9ee6cfbc82944cfb AS runtime
+FROM python:3.11-slim AS runtime
 
 # SEC-08: Create a non-root user and group.
 RUN groupadd --system appgroup && \
