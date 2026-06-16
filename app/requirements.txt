@@ -1,6 +1,12 @@
+# StackBridge Orders API — Python dependencies
+# All pinned to specific versions.
+# Run `pip-audit -r requirements.txt` to check for CVEs before upgrading.
+
 Flask==2.3.3
 Jinja2==3.1.2
 Werkzeug==2.3.7
 psycopg2-binary==2.9.9
 requests==2.31.0
 PyYAML==6.0.1
+Werkzeug>=3.0.3
+gunicorn>=22.0.0

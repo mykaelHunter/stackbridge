@@ -26,6 +26,14 @@ terraform.tfvars
 tfplan
 *.plan
 
-# Environment files
-.env
-.env.*
+# Ignore CLI configuration files
+.terraformrc
+terraform.rc
+
+# Docker
+.dockerignore
+
+# Terraform plan artifacts — never commit these
+*.binary
+tfplan.json
+tfplan.binary
