@@ -105,7 +105,7 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
-            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+            type=raw,value=latest
             type=ref,event=pr,prefix=pr-
           labels: |
             org.opencontainers.image.title=StackBridge Orders API
@@ -146,10 +146,34 @@ jobs:
       # Scans the built image for OS and library CVEs.
       # CRITICAL severity fails the build.
       # HIGH severity is reported but does not block (for now).
-      - name: Scan image with Trivy
+      #
+      # Image source logic:
+      #   - PRs:       image loaded into local Docker daemon (load: true above)
+      #                scan locally — no registry auth needed
+      #   - main/tags: image pushed to Docker Hub
+      #                scan remotely using DOCKERHUB_TOKEN
+      #
+      # Uses `latest` tag for push events because it is always present
+      # and avoids the short-SHA format mismatch that caused the previous error.
+      - name: Scan image with Trivy (PR - local daemon)
+        if: github.event_name == 'pull_request'
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:sha-${{ github.sha }}
+          image-ref: ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:pr-${{ github.event.number }}
+          format: table
+          exit-code: "1"
+          ignore-unfixed: true
+          severity: CRITICAL,HIGH
+          vuln-type: os,library
+
+      - name: Scan image with Trivy (push - remote registry)
+        if: github.event_name != 'pull_request'
+        uses: aquasecurity/trivy-action@master
+        env:
+          TRIVY_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          TRIVY_PASSWORD: ${{ secrets.DOCKERHUB_TOKEN }}
+        with:
+          image-ref: ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:latest
           format: table
           exit-code: "1"
           ignore-unfixed: true
