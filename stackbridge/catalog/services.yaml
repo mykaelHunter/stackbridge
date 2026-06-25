@@ -1,0 +1,17 @@
+services:
+  - name: payment-api
+    owner: platform-team
+    runtime: python
+    port: 8000
+    repository: github.com/org/payment-api
+    deployment: kubernetes
+
+  - name: user-api
+    runtime: python
+    port: 8001
+    description: User management service
+
+  - name: notification-api
+    runtime: python
+    port: 8002
+    description: Notification service

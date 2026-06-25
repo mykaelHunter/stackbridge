@@ -1,0 +1,12 @@
+services:
+  - name: payment-api
+    runtime: python
+    port: 8000
+
+  - name: user-service
+    runtime: python
+    port: 8001
+
+  - name: notification-service
+    runtime: python
+    port: 8002
