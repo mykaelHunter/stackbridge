@@ -62,6 +62,7 @@ resource "random_password" "db" {
 resource "aws_secretsmanager_secret" "db_password" {
   name        = "stackbridge/${var.environment}/db-password"
   description = "RDS master password for ${var.name} ${var.environment}"
+  recovery_window_in_days = var.environment == "prod" ? 7 : 0
 
   tags = merge(var.tags, {
     Name        = "${var.name}-${var.environment}-db-password"
@@ -79,6 +80,10 @@ resource "aws_secretsmanager_secret_version" "db_password" {
     port     = 5432
     dbname   = var.db_name
   })
+  
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 # ── RDS instance ──────────────────────────────────────────────

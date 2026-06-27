@@ -61,7 +61,7 @@ variable "allocated_storage_gb" {
 variable "backup_retention_days" {
   description = "Number of days to retain automated backups. Minimum 7 for production."
   type        = number
-  default     = 7
+  default     = 1
 
   validation {
     condition     = var.backup_retention_days >= 1

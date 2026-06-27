@@ -86,8 +86,8 @@ module "database" {
   vpc_id                = module.network.vpc_id
   private_subnet_ids    = module.network.private_subnet_ids
   app_security_group_id = module.compute.security_group_id
-  instance_class        = "db.t3.small"
-  backup_retention_days = 7
+  instance_class        = "db.t3.micro"
+  backup_retention_days = 1
   multi_az              = false
   deletion_protection   = true
   tags                  = local.common_tags
