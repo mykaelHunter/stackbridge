@@ -3,7 +3,7 @@ services:
     owner: platform-team
     runtime: python
     port: 8000
-    repository: github.com/org/payment-api
+    repository: github.com/mykaelHunter/stackbridge
     deployment: kubernetes
 
   - name: user-api
