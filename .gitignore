@@ -37,3 +37,6 @@ terraform.rc
 *.binary
 tfplan.json
 tfplan.binary
+
+# Ignore platform artifacts
+stackbridge_platform.egg-info/
