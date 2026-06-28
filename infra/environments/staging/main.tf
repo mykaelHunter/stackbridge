@@ -115,6 +115,12 @@ module "eks" {
   vpc_id              = module.network.vpc_id
   private_subnet_ids  = module.network.private_subnet_ids
   public_subnet_ids   = module.network.public_subnet_ids
+  # Nodes stay in private subnets here because nat_gateway_enabled
+  # is true for staging — there's a route to the internet via NAT,
+  # so nodes don't need public IPs to bootstrap or pull images.
+  # This is the recommended placement; dev only deviates from it
+  # because NAT is disabled there for cost.
+  node_subnet_ids     = module.network.private_subnet_ids
   node_instance_type  = "t3.small"
   desired_node_count  = 2
   min_node_count      = 1

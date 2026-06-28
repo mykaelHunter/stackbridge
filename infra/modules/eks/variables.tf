@@ -19,13 +19,28 @@ variable "vpc_id" {
 }
 
 variable "private_subnet_ids" {
-  description = "Private subnet IDs — worker nodes live here"
+  description = "Private subnet IDs — used for the EKS control plane ENIs regardless of node placement"
   type        = list(string)
 }
 
 variable "public_subnet_ids" {
-  description = "Public subnet IDs — needed for public-facing load balancers"
+  description = "Public subnet IDs — needed for public-facing load balancers, and for worker nodes when node_subnet_ids points here"
   type        = list(string)
+}
+
+variable "node_subnet_ids" {
+  description = <<-EOT
+    Subnet IDs where worker nodes are actually launched.
+    Pass private_subnet_ids when nat_gateway_enabled = true at
+    the environment level (recommended — staging, prod).
+    Pass public_subnet_ids when nat_gateway_enabled = false
+    (dev only) — nodes need a route to the internet to bootstrap
+    and join the cluster, and without NAT, public subnets with
+    an internet gateway are the only way to provide that.
+    Trade-off: nodes get public IPs and are directly reachable
+    from the internet, relying on the node security group alone.
+  EOT
+  type = list(string)
 }
 
 variable "kubernetes_version" {

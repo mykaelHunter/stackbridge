@@ -130,6 +130,13 @@ module "eks" {
   vpc_id              = module.network.vpc_id
   private_subnet_ids  = module.network.private_subnet_ids
   public_subnet_ids   = module.network.public_subnet_ids
+  # Nodes run in public subnets here because nat_gateway_enabled
+  # is false above — without NAT, private subnets have no route
+  # to the internet and nodes cannot bootstrap or join the
+  # cluster. Trade-off accepted for dev only: nodes get public
+  # IPs and rely on the node security group instead of network
+  # isolation. Do not copy this into staging/prod.
+  node_subnet_ids     = module.network.public_subnet_ids
   node_instance_type  = "t3a.medium"
   desired_node_count  = 1
   min_node_count      = 1

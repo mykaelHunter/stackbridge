@@ -310,7 +310,20 @@ resource "aws_eks_node_group" "default" {
   cluster_name    = aws_eks_cluster.this.name
   node_group_name = "${var.name}-${var.environment}-default"
   node_role_arn   = aws_iam_role.node.arn
-  subnet_ids      = var.private_subnet_ids
+
+  # Public subnets are used here instead of private when
+  # nat_gateway_enabled = false at the environment level (see
+  # network module). Without a NAT gateway, nodes in a private
+  # subnet have no route to the internet and cannot reach the
+  # EKS API or pull system images — they launch successfully but
+  # never join the cluster (the "Still creating..." hang).
+  #
+  # Trade-off: nodes get public IPs and are directly internet-
+  # reachable, relying entirely on the node security group for
+  # protection rather than network isolation. Acceptable for dev;
+  # staging/prod should keep NAT enabled and nodes in private
+  # subnets instead of replicating this here.
+  subnet_ids = var.node_subnet_ids
 
   launch_template {
     id      = aws_launch_template.node.id
@@ -318,8 +331,13 @@ resource "aws_eks_node_group" "default" {
   }
 
   instance_types = [var.node_instance_type]
-  ami_type       = "AL2_x86_64"
-  capacity_type  = var.capacity_type # ON_DEMAND or SPOT
+  # CUSTOM is required here, not AL2_x86_64 — AWS rejects any
+  # other ami_type once the launch template specifies an explicit
+  # image_id. EKS won't try to reconcile "use this AMI" with
+  # "also pick the AMI yourself" — CUSTOM means "trust the
+  # launch template's image_id completely."
+  ami_type      = "CUSTOM"
+  capacity_type = var.capacity_type # ON_DEMAND or SPOT
 
   scaling_config {
     desired_size = var.desired_node_count
