@@ -130,11 +130,11 @@ module "eks" {
   vpc_id              = module.network.vpc_id
   private_subnet_ids  = module.network.private_subnet_ids
   public_subnet_ids   = module.network.public_subnet_ids
-  node_instance_type  = "t3.small"
+  node_instance_type  = "t3a.medium"
   desired_node_count  = 1
   min_node_count      = 1
   max_node_count      = 2
-  capacity_type       = "ON_DEMAND"
+  capacity_type       = "SPOT"
   tags                = local.common_tags
 }
 

@@ -42,7 +42,7 @@ variable "node_instance_type" {
     pods after kubelet/kube-proxy/CNI overhead.
   EOT
   type    = string
-  default = "t3.small"
+  default = "t3a.medium"
 }
 
 variable "desired_node_count" {
@@ -66,7 +66,7 @@ variable "max_node_count" {
 variable "capacity_type" {
   description = "ON_DEMAND or SPOT. SPOT is cheaper but nodes can be reclaimed."
   type        = string
-  default     = "ON_DEMAND"
+  default     = "SPOT"
 
   validation {
     condition     = contains(["ON_DEMAND", "SPOT"], var.capacity_type)

@@ -7,23 +7,14 @@ aws s3 mb s3://stackbridge-tf-state --region us-east-1
 
 # Enable versioning (so you can recover from bad state)
 aws s3api put-bucket-versioning \
-  --bucket stackbridge-tf-state \
+  --bucket stackbridge-tfs-state \
   --versioning-configuration Status=Enabled
 
 # Enable encryption
 aws s3api put-bucket-encryption \
-  --bucket stackbridge-tf-state \
+  --bucket stackbridge-tfs-state \
   --server-side-encryption-configuration \
   '{"Rules":[{"ApplyServerSideEncryptionByDefault":{"SSEAlgorithm":"AES256"}}]}'
-
-# Create the lock table
-aws dynamodb create-table \
-  --table-name stackbridge-tf-lock \
-  --attribute-definitions AttributeName=LockID,AttributeType=S \
-  --key-schema AttributeName=LockID,KeyType=HASH \
-  --billing-mode PAY_PER_REQUEST \
-  --region us-east-1
-
 
 # Create the OIDC provider (one-time)
 aws iam create-open-id-connect-provider \
