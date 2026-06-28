@@ -1,0 +1,20 @@
+registry:
+  provider: ghcr
+  organization: https://github.com/mykaelHunter
+
+gitops:
+  enabled: false
+  repository: ""
+
+deployment:
+  namespace: default
+
+environments:
+  dev:
+    namespace: dev
+
+  staging:
+    namespace: staging
+
+  prod:
+    namespace: production
