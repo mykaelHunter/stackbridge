@@ -91,7 +91,7 @@ resource "aws_iam_role_policy_attachment" "node_ssm_policy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
 }
 
-# ── Security group: cluster <-> node communication ────────────
+# ── Security group: cluster control plane ──────────────────────
 resource "aws_security_group" "cluster" {
   name        = "${var.name}-${var.environment}-eks-cluster-sg"
   description = "EKS control plane security group"
@@ -112,11 +112,90 @@ resource "aws_security_group" "cluster" {
   })
 }
 
+# ── Security group: worker nodes ────────────────────────────────
+# EKS managed node groups need their own SG. Nodes must be able to
+# reach the control plane on 443, and the control plane must be
+# able to reach the kubelet on nodes (10250) for exec/logs/metrics.
+resource "aws_security_group" "node" {
+  name        = "${var.name}-${var.environment}-eks-node-sg"
+  description = "EKS worker node security group"
+  vpc_id      = var.vpc_id
+
+  egress {
+    description = "Allow all outbound"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = merge(var.tags, {
+    Name                                            = "${var.name}-${var.environment}-eks-node-sg"
+    Environment                                     = var.environment
+    Module                                          = "eks"
+    "kubernetes.io/cluster/${var.name}-${var.environment}" = "owned"
+  })
+}
+
+# Node -> node-group internal traffic (pod-to-pod, kube-proxy, CNI)
+resource "aws_security_group_rule" "node_self_ingress" {
+  type                     = "ingress"
+  from_port                = 0
+  to_port                  = 65535
+  protocol                 = "-1"
+  security_group_id        = aws_security_group.node.id
+  source_security_group_id = aws_security_group.node.id
+  description              = "Allow nodes to communicate with each other"
+}
+
+# Control plane -> nodes (kubelet API: exec, logs, port-forward, metrics)
+resource "aws_security_group_rule" "cluster_to_node_kubelet" {
+  type                     = "ingress"
+  from_port                = 1025
+  to_port                  = 65535
+  protocol                 = "tcp"
+  security_group_id        = aws_security_group.node.id
+  source_security_group_id = aws_security_group.cluster.id
+  description              = "Allow control plane to reach kubelet on nodes"
+}
+
+# Control plane -> nodes (webhook/admission controller ports, common addons)
+resource "aws_security_group_rule" "cluster_to_node_https" {
+  type                     = "ingress"
+  from_port                = 443
+  to_port                  = 443
+  protocol                 = "tcp"
+  security_group_id        = aws_security_group.node.id
+  source_security_group_id = aws_security_group.cluster.id
+  description              = "Allow control plane to reach HTTPS webhooks on nodes"
+}
+
+# Nodes -> control plane (this is the rule that was missing —
+# without it, nodes cannot reach the API server to register,
+# which is the direct cause of "Instances failed to join the
+# kubernetes cluster")
+resource "aws_security_group_rule" "node_to_cluster_https" {
+  type                     = "ingress"
+  from_port                = 443
+  to_port                  = 443
+  protocol                 = "tcp"
+  security_group_id        = aws_security_group.cluster.id
+  source_security_group_id = aws_security_group.node.id
+  description              = "Allow nodes to reach the control plane API server"
+}
+
 # ── EKS Cluster ─────────────────────────────────────────────────
 resource "aws_eks_cluster" "this" {
   name     = "${var.name}-${var.environment}"
   role_arn = aws_iam_role.cluster.arn
   version  = var.kubernetes_version
+
+  # Required for aws_eks_access_entry to work. Without this,
+  # the cluster defaults to CONFIG_MAP-only auth and access
+  # entries are rejected with InvalidRequestException.
+  access_config {
+    authentication_mode = "API_AND_CONFIG_MAP"
+  }
 
   vpc_config {
     subnet_ids              = concat(var.private_subnet_ids, var.public_subnet_ids)
@@ -165,6 +244,39 @@ resource "aws_iam_openid_connect_provider" "eks" {
   })
 }
 
+# ── Launch template ─────────────────────────────────────────────
+# EKS managed node groups don't expose a security_group_ids
+# argument directly — a launch template is required to attach
+# the custom node security group defined above. Without this,
+# nodes only get the EKS-created default SG, which (combined
+# with the cluster SG having zero ingress rules) is the direct
+# cause of "Instances failed to join the kubernetes cluster".
+resource "aws_launch_template" "node" {
+  name_prefix = "${var.name}-${var.environment}-eks-node-"
+
+  vpc_security_group_ids = [aws_security_group.node.id]
+
+  metadata_options {
+    http_endpoint               = "enabled"
+    http_tokens                 = "required" # IMDSv2 only
+    http_put_response_hop_limit = 2          # EKS bootstrap needs hop 2, not 1
+  }
+
+  tag_specifications {
+    resource_type = "instance"
+    tags = merge(var.tags, {
+      Name        = "${var.name}-${var.environment}-eks-node"
+      Environment = var.environment
+      Module      = "eks"
+    })
+  }
+
+  tags = merge(var.tags, {
+    Environment = var.environment
+    Module      = "eks"
+  })
+}
+
 # ── Managed Node Group ──────────────────────────────────────────
 # Single node by default — see file header for free tier rationale.
 resource "aws_eks_node_group" "default" {
@@ -172,6 +284,11 @@ resource "aws_eks_node_group" "default" {
   node_group_name = "${var.name}-${var.environment}-default"
   node_role_arn   = aws_iam_role.node.arn
   subnet_ids      = var.private_subnet_ids
+
+  launch_template {
+    id      = aws_launch_template.node.id
+    version = aws_launch_template.node.latest_version
+  }
 
   instance_types = [var.node_instance_type]
   ami_type       = "AL2_x86_64"
@@ -201,6 +318,10 @@ resource "aws_eks_node_group" "default" {
     aws_iam_role_policy_attachment.node_worker_policy,
     aws_iam_role_policy_attachment.node_cni_policy,
     aws_iam_role_policy_attachment.node_ecr_policy,
+    aws_security_group_rule.node_self_ingress,
+    aws_security_group_rule.cluster_to_node_kubelet,
+    aws_security_group_rule.cluster_to_node_https,
+    aws_security_group_rule.node_to_cluster_https,
   ]
 
   lifecycle {
