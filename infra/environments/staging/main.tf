@@ -16,11 +16,11 @@ terraform {
   }
 
   backend "s3" {
-    bucket         = "stackbridge-tf-state"
-    key            = "environments/staging/terraform.tfstate"
-    region         = "us-east-1"
-    dynamodb_table = "stackbridge-tf-lock"
-    encrypt        = true
+    bucket       = "stackbridge-tf-state"
+    key          = "environments/staging/terraform.tfstate"
+    region       = "us-east-1"
+    use_lockfile = true   # native S3 locking (replaces deprecated dynamodb_table)
+    encrypt      = true
   }
 }
 
@@ -102,6 +102,27 @@ module "storage" {
   tags        = local.common_tags
 }
 
+# ── EKS ───────────────────────────────────────────────────────
+# Same free-tier-adjacent sizing as dev. Staging gets 2 nodes by
+# default since canary/rollout testing (Argo Rollouts) needs at
+# least 2 schedulable nodes to demonstrate a real rolling update.
+module "eks" {
+  source = "../../modules/eks"
+
+  name                = local.name
+  environment         = local.environment
+  aws_region          = var.aws_region
+  vpc_id              = module.network.vpc_id
+  private_subnet_ids  = module.network.private_subnet_ids
+  public_subnet_ids   = module.network.public_subnet_ids
+  node_instance_type  = "t3.small"
+  desired_node_count  = 2
+  min_node_count      = 1
+  max_node_count      = 3
+  capacity_type       = "ON_DEMAND"
+  tags                = local.common_tags
+}
+
 output "vpc_id" {
   value = module.network.vpc_id
 }
@@ -120,4 +141,17 @@ output "db_secret_arn" {
 
 output "uploads_bucket" {
   value = module.storage.bucket_id
+}
+
+output "eks_cluster_name" {
+  value = module.eks.cluster_name
+}
+
+output "eks_cluster_endpoint" {
+  value = module.eks.cluster_endpoint
+}
+
+output "eks_kubeconfig_command" {
+  description = "Run this command to configure kubectl"
+  value       = module.eks.kubeconfig_command
 }
