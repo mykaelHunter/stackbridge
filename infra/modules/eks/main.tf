@@ -244,6 +244,17 @@ resource "aws_iam_openid_connect_provider" "eks" {
   })
 }
 
+# ── EKS-optimized AMI lookup ─────────────────────────────────────
+# Fetched explicitly because once a custom launch template is
+# attached to a managed node group (required above for the SG),
+# EKS's automatic AMI selection + bootstrap script injection
+# becomes unreliable. Pinning the AMI and writing our own
+# bootstrap user-data removes the ambiguity entirely — this is
+# the direct fix for nodes launching but never joining the cluster.
+data "aws_ssm_parameter" "eks_ami" {
+  name = "/aws/service/eks/optimized-ami/${var.kubernetes_version}/amazon-linux-2/recommended/image_id"
+}
+
 # ── Launch template ─────────────────────────────────────────────
 # EKS managed node groups don't expose a security_group_ids
 # argument directly — a launch template is required to attach
@@ -254,7 +265,23 @@ resource "aws_iam_openid_connect_provider" "eks" {
 resource "aws_launch_template" "node" {
   name_prefix = "${var.name}-${var.environment}-eks-node-"
 
+  image_id = data.aws_ssm_parameter.eks_ami.value
+
   vpc_security_group_ids = [aws_security_group.node.id]
+
+  # Explicit EKS bootstrap. This MUST be base64-encoded user-data.
+  # Once a custom launch template is supplied, AWS no longer
+  # reliably auto-injects this script — it must be provided here
+  # or the instance launches successfully (visible in the ASG/EC2
+  # console) but never registers as a Kubernetes node.
+  user_data = base64encode(<<-EOT
+    #!/bin/bash
+    set -o xtrace
+    /etc/eks/bootstrap.sh ${aws_eks_cluster.this.name} \
+      --b64-cluster-ca ${aws_eks_cluster.this.certificate_authority[0].data} \
+      --apiserver-endpoint ${aws_eks_cluster.this.endpoint}
+  EOT
+  )
 
   metadata_options {
     http_endpoint               = "enabled"
