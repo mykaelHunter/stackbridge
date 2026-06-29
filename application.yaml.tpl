@@ -10,7 +10,7 @@ spec:
     server: https://kubernetes.default.svc
 
   source:
-    repoURL: https://github.com/company/platform-apps
+    repoURL: https://github.com/mykaelHunter/stackbridge.git
     path: services/{{SERVICE_NAME}}
 
   project: default
