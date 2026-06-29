@@ -44,7 +44,7 @@ def scaffold(service_name):
     "PORT": 8000,
 
     # Docker image configuration
-    "IMAGE_REPOSITORY": f"docker.io/stackbridge/{service_name}",
+    "IMAGE_REPOSITORY": f"docker.io/mykaelhunter/{service_name}",
     "IMAGE_TAG": "latest",
 
     # GitOps repository
