@@ -34,6 +34,11 @@ resource "aws_subnet" "public" {
     Name        = "${var.name}-public-${var.availability_zones[count.index]}"
     Environment = var.environment
     Tier        = "public"
+    # EKS discovery tags — required for the AWS Load Balancer
+    # Controller to auto-provision internet-facing ELBs/ALBs here,
+    # and for the cluster to auto-discover this subnet.
+    "kubernetes.io/role/elb"                      = "1"
+    "kubernetes.io/cluster/${var.name}-${var.environment}" = "shared"
   })
 }
 
@@ -48,6 +53,10 @@ resource "aws_subnet" "private" {
     Name        = "${var.name}-private-${var.availability_zones[count.index]}"
     Environment = var.environment
     Tier        = "private"
+    # EKS discovery tags — required for internal load balancers
+    # and for worker nodes / pods to be scheduled in these subnets.
+    "kubernetes.io/role/internal-elb"              = "1"
+    "kubernetes.io/cluster/${var.name}-${var.environment}" = "shared"
   })
 }
 

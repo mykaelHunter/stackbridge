@@ -22,11 +22,11 @@ terraform {
   }
 
   backend "s3" {
-    bucket         = "stackbridge-tf-state"
-    key            = "environments/dev/terraform.tfstate"
-    region         = "us-east-1"
-    dynamodb_table = "stackbridge-tf-lock"
-    encrypt        = true
+    bucket       = "stackbridge-tf-state"
+    key          = "environments/dev/terraform.tfstate"
+    region       = "us-east-1"
+    use_lockfile = true   # native S3 locking (replaces deprecated dynamodb_table)
+    encrypt      = true
   }
 }
 
@@ -117,6 +117,34 @@ module "storage" {
   tags        = local.common_tags
 }
 
+# ── EKS ───────────────────────────────────────────────────────
+# Single t3.small node by default — see modules/eks/main.tf header
+# for the free tier cost breakdown. The control plane itself is
+# NOT free tier eligible (~$0.10/hr regardless of size).
+module "eks" {
+  source = "../../modules/eks"
+
+  name                = local.name
+  environment         = local.environment
+  aws_region          = var.aws_region
+  vpc_id              = module.network.vpc_id
+  private_subnet_ids  = module.network.private_subnet_ids
+  public_subnet_ids   = module.network.public_subnet_ids
+  # Nodes run in public subnets here because nat_gateway_enabled
+  # is false above — without NAT, private subnets have no route
+  # to the internet and nodes cannot bootstrap or join the
+  # cluster. Trade-off accepted for dev only: nodes get public
+  # IPs and rely on the node security group instead of network
+  # isolation. Do not copy this into staging/prod.
+  node_subnet_ids     = module.network.public_subnet_ids
+  node_instance_type  = "t3a.medium"
+  desired_node_count  = 1
+  min_node_count      = 1
+  max_node_count      = 2
+  capacity_type       = "SPOT"
+  tags                = local.common_tags
+}
+
 # ── Outputs ───────────────────────────────────────────────────
 output "vpc_id" {
   value = module.network.vpc_id
@@ -137,4 +165,17 @@ output "db_secret_arn" {
 
 output "uploads_bucket" {
   value = module.storage.bucket_id
+}
+
+output "eks_cluster_name" {
+  value = module.eks.cluster_name
+}
+
+output "eks_cluster_endpoint" {
+  value = module.eks.cluster_endpoint
+}
+
+output "eks_kubeconfig_command" {
+  description = "Run this command to configure kubectl"
+  value       = module.eks.kubeconfig_command
 }

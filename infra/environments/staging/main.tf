@@ -16,11 +16,11 @@ terraform {
   }
 
   backend "s3" {
-    bucket         = "stackbridge-tf-state"
-    key            = "environments/staging/terraform.tfstate"
-    region         = "us-east-1"
-    dynamodb_table = "stackbridge-tf-lock"
-    encrypt        = true
+    bucket       = "stackbridge-tf-state"
+    key          = "environments/staging/terraform.tfstate"
+    region       = "us-east-1"
+    use_lockfile = true   # native S3 locking (replaces deprecated dynamodb_table)
+    encrypt      = true
   }
 }
 
@@ -86,8 +86,8 @@ module "database" {
   vpc_id                = module.network.vpc_id
   private_subnet_ids    = module.network.private_subnet_ids
   app_security_group_id = module.compute.security_group_id
-  instance_class        = "db.t3.small"
-  backup_retention_days = 7
+  instance_class        = "db.t3.micro"
+  backup_retention_days = 1
   multi_az              = false
   deletion_protection   = true
   tags                  = local.common_tags
@@ -100,6 +100,33 @@ module "storage" {
   environment = local.environment
   purpose     = "uploads"
   tags        = local.common_tags
+}
+
+# ── EKS ───────────────────────────────────────────────────────
+# Same free-tier-adjacent sizing as dev. Staging gets 2 nodes by
+# default since canary/rollout testing (Argo Rollouts) needs at
+# least 2 schedulable nodes to demonstrate a real rolling update.
+module "eks" {
+  source = "../../modules/eks"
+
+  name                = local.name
+  environment         = local.environment
+  aws_region          = var.aws_region
+  vpc_id              = module.network.vpc_id
+  private_subnet_ids  = module.network.private_subnet_ids
+  public_subnet_ids   = module.network.public_subnet_ids
+  # Nodes stay in private subnets here because nat_gateway_enabled
+  # is true for staging — there's a route to the internet via NAT,
+  # so nodes don't need public IPs to bootstrap or pull images.
+  # This is the recommended placement; dev only deviates from it
+  # because NAT is disabled there for cost.
+  node_subnet_ids     = module.network.private_subnet_ids
+  node_instance_type  = "t3.small"
+  desired_node_count  = 2
+  min_node_count      = 1
+  max_node_count      = 3
+  capacity_type       = "ON_DEMAND"
+  tags                = local.common_tags
 }
 
 output "vpc_id" {
@@ -120,4 +147,17 @@ output "db_secret_arn" {
 
 output "uploads_bucket" {
   value = module.storage.bucket_id
+}
+
+output "eks_cluster_name" {
+  value = module.eks.cluster_name
+}
+
+output "eks_cluster_endpoint" {
+  value = module.eks.cluster_endpoint
+}
+
+output "eks_kubeconfig_command" {
+  description = "Run this command to configure kubectl"
+  value       = module.eks.kubeconfig_command
 }

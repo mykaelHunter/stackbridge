@@ -11,6 +11,7 @@ build/
 *.tfstate
 *.tfstate.*
 terraform.tfvars
+*.tfvars
 
 # macOS
 .DS_Store
@@ -37,3 +38,6 @@ terraform.rc
 *.binary
 tfplan.json
 tfplan.binary
+
+# Ignore platform artifacts
+stackbridge_platform.egg-info/
