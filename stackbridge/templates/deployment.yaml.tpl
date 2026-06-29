@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
       - name: {{SERVICE_NAME}}
-        image: stackbridge/{{SERVICE_NAME}}:latest
+        image: mykaelhunter/{{SERVICE_NAME}}:latest
 
         ports:
         - containerPort: {{PORT}}
