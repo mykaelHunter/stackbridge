@@ -40,8 +40,15 @@ def scaffold(service_name):
     # --------------------------------------------------
 
     values = {
-        "SERVICE_NAME": service_name,
-        "PORT": 8000,
+    "SERVICE_NAME": service_name,
+    "PORT": 8000,
+
+    # Docker image configuration
+    "IMAGE_REPOSITORY": f"docker.io/stackbridge/{service_name}",
+    "IMAGE_TAG": "latest",
+
+    # GitOps repository
+    "REPO_URL": "https://github.com/mykaelHunter/stackbridge.git",
     }
 
     # --------------------------------------------------

@@ -1,7 +1,7 @@
 replicaCount: 2
 
 image:
-  repository: stackbridge/{{SERVICE_NAME}}
+  repository: f"docker.io/stackbridge/{service_name}"
   tag: latest
   pullPolicy: Always
 

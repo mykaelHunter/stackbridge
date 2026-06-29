@@ -11,7 +11,7 @@ spec:
 
   source:
 
-    repoURL: https://github.com/mykaelHunter/stackbridge.git
+    repoURL: {{REPO_URL}}
 
     targetRevision: HEAD
 
