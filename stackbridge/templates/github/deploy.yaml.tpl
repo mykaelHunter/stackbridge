@@ -28,7 +28,7 @@ jobs:
       with:
         context: .
         push: true
-        tags: stackbridge/{{SERVICE_NAME}}:latest
+        tags: mykaelhunter/{{SERVICE_NAME}}:latest
 
     - uses: azure/setup-kubectl@v4
 
