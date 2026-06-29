@@ -1,9 +1,9 @@
 from pathlib import Path
 
 required = [
-    "app.py",
-    "requirements.txt",
-    "Dockerfile",
+    "app/app.py",
+    "app/requirements.txt",
+    "app/Dockerfile",
     "README.md",
 
     "k8s/deployment.yaml",
