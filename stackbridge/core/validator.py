@@ -1,16 +1,9 @@
 from pathlib import Path
 
-<<<<<<< HEAD
 required = [
     "app/app.py",
     "app/requirements.txt",
     "app/Dockerfile",
-=======
-REQUIRED_FILES  = [
-    "app.py",
-    "requirements.txt",
-    "Dockerfile",
->>>>>>> 75c212b (refactor: introduce deployment pipeline framework)
     "README.md",
 
     "k8s/deployment.yaml",
