@@ -251,8 +251,16 @@ resource "aws_iam_openid_connect_provider" "eks" {
 # becomes unreliable. Pinning the AMI and writing our own
 # bootstrap user-data removes the ambiguity entirely — this is
 # the direct fix for nodes launching but never joining the cluster.
+#
+# AL2023, not AL2: Amazon Linux 2 reaches EKS end-of-support on
+# 2026-06-30. AL2023 is the current EKS-optimized AMI family and
+# uses a different bootstrap mechanism (nodeadm) — see user_data
+# below. Ubuntu was considered but rejected: it requires an
+# entirely separate node init path with no AWS-published SSM
+# parameter for AMI discovery, more moving parts for no real
+# benefit here since AL2023 is natively supported by EKS.
 data "aws_ssm_parameter" "eks_ami" {
-  name = "/aws/service/eks/optimized-ami/${var.kubernetes_version}/amazon-linux-2/recommended/image_id"
+  name = "/aws/service/eks/optimized-ami/${var.kubernetes_version}/amazon-linux-2023/x86_64/standard/recommended/image_id"
 }
 
 # ── Launch template ─────────────────────────────────────────────
@@ -269,17 +277,21 @@ resource "aws_launch_template" "node" {
 
   vpc_security_group_ids = [aws_security_group.node.id]
 
-  # Explicit EKS bootstrap. This MUST be base64-encoded user-data.
-  # Once a custom launch template is supplied, AWS no longer
-  # reliably auto-injects this script — it must be provided here
-  # or the instance launches successfully (visible in the ASG/EC2
-  # console) but never registers as a Kubernetes node.
+  # AL2023 bootstrap via nodeadm — NOT /etc/eks/bootstrap.sh.
+  # That script does not exist on AL2023 AMIs; it was AL2-only
+  # and is part of what's going away with AL2 end-of-support.
+  # nodeadm reads a NodeConfig manifest (YAML, Kubernetes-style)
+  # from user-data instead of taking CLI flags. Same effect —
+  # cluster name, CA cert, and API endpoint — different format.
   user_data = base64encode(<<-EOT
-    #!/bin/bash
-    set -o xtrace
-    /etc/eks/bootstrap.sh ${aws_eks_cluster.this.name} \
-      --b64-cluster-ca ${aws_eks_cluster.this.certificate_authority[0].data} \
-      --apiserver-endpoint ${aws_eks_cluster.this.endpoint}
+    apiVersion: node.eks.aws/v1alpha1
+    kind: NodeConfig
+    spec:
+      cluster:
+        name: ${aws_eks_cluster.this.name}
+        apiServerEndpoint: ${aws_eks_cluster.this.endpoint}
+        certificateAuthority: ${aws_eks_cluster.this.certificate_authority[0].data}
+        cidr: ${aws_eks_cluster.this.kubernetes_network_config[0].service_ipv4_cidr}
   EOT
   )
 
