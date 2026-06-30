@@ -1,6 +1,6 @@
 apiVersion: v2
 
-name: stackbridge
+name: stackbridge-api
 
 description: StackBridge generated service
 
