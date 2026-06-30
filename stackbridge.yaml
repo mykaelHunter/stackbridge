@@ -1,13 +1,8 @@
 registry:
-<<<<<<< HEAD
-  provider: docker.io
-  organization: https://github.com/mykaelHunter
-=======
   provider: dockerhub
   server: docker.io
-  organization: owolabiyusuff
+  organization: mykaelhunter
   tag: latest
->>>>>>> 75c212b (refactor: introduce deployment pipeline framework)
 
 gitops:
   enabled: false
