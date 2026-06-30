@@ -19,7 +19,8 @@ spec:
     spec:
       containers:
       - name: {{SERVICE_NAME}}
-        image: ghcr.io/company/{{SERVICE_NAME}}:latest
+        image: {{IMAGE_REPOSITORY}}:{{IMAGE_TAG}}
+        imagePullPolicy: IfNotPresent
 
         ports:
         - containerPort: {{PORT}}

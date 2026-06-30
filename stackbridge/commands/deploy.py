@@ -1,29 +1,17 @@
 import click
-import subprocess
-from pathlib import Path
+
+from stackbridge.core.deploy import deploy_service
 
 
 @click.command(name="deploy")
 @click.argument("service_name")
-def deploy(service_name):
-
-    service_dir = Path("services") / service_name
-
-    if not service_dir.exists():
-        click.echo(
-            f"Service '{service_name}' not found"
-        )
-        return
-
-    click.echo(
-        f"Deploying {service_name}..."
-    )
-
-    subprocess.run(
-        [
-            "kubectl",
-            "apply",
-            "-f",
-            str(service_dir / "k8s")
-        ]
-    )
+@click.option(
+    "--env",
+    default="dev",
+    help="Deployment environment",
+)
+def deploy(service_name, env):
+    """
+    Deploy a service.
+    """
+    deploy_service(service_name, env)

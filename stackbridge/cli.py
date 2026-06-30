@@ -5,6 +5,7 @@ from stackbridge.commands.destroy import destroy
 from stackbridge.commands.status import status
 from stackbridge.commands.service import service
 
+
 @click.group()
 def cli():
     pass
