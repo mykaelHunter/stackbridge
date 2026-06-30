@@ -28,7 +28,7 @@ jobs:
       with:
         context: .
         push: true
-        tags: stackbridge/payment-api:latest
+        tags: mykaelhunter/stackbridge:latest
 
     - uses: azure/setup-kubectl@v4
 
