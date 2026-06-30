@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 
 metadata:
-  name: stackbridge-api-config
+  name: stackbridge-config
 
 data:
 
