@@ -1,0 +1,29 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+
+metadata:
+  name: payment-api
+
+spec:
+
+  rules:
+
+  - host: payment-api.local
+
+    http:
+
+      paths:
+
+      - path: /
+
+        pathType: Prefix
+
+        backend:
+
+          service:
+
+            name: payment-api
+
+            port:
+
+              number: 80

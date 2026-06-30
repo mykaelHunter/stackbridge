@@ -1,20 +1,33 @@
+import subprocess
+import click
 from pathlib import Path
-import yaml
 
 
-def update(service, tag):
+def deploy_chart(service_name, environment, image):
 
-    values = (
-        Path("services")
-        / service
-        / "helm"
-        / "values.yaml"
+    chart = Path("services") / service_name / "helm"
+
+    click.echo("Deploying Helm chart...")
+
+    repository, tag = image.rsplit(":", 1)
+
+
+    subprocess.run(
+        [
+            "helm",
+            "upgrade",
+            "--install",
+            service_name,
+            str(chart),
+            "--namespace",
+            environment,
+            "--create-namespace",
+            "--set",
+            f"image.repository={repository}",
+            "--set",
+            f"image.tag={tag}"
+        ],
+        check=True
     )
 
-    with values.open() as f:
-        data = yaml.safe_load(f)
-
-    data["image"]["tag"] = tag
-
-    with values.open("w") as f:
-        yaml.safe_dump(data, f)
+    click.echo("✓ Helm deployment complete")
