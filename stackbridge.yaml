@@ -1,6 +1,8 @@
 registry:
-  provider: docker.io
-  organization: https://github.com/mykaelHunter
+  provider: dockerhub
+  server: docker.io
+  organization: mykaelhunter
+  tag: latest
 
 gitops:
   enabled: false
