@@ -2,13 +2,13 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 
 metadata:
-  name: payment-api
+  name: stackbridge
 
 spec:
 
   rules:
 
-  - host: payment-api.local
+  - host: stackbridge.local
 
     http:
 
@@ -22,7 +22,7 @@ spec:
 
           service:
 
-            name: payment-api
+            name: stackbridge
 
             port:
 
