@@ -8,7 +8,7 @@ def build(service_name):
     registry = get_registry()
 
     server = registry.get("server", "docker.io")
-    organization = registry.get("organization", "stackbridge")
+    organization = registry.get("organization", "mykaelhunter")
     tag = registry.get("tag", "latest")
 
     image = f"{server}/{organization}/{service_name}:{tag}"
