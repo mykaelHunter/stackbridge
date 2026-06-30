@@ -1,9 +1,17 @@
 import subprocess
 
+from stackbridge.core.config import get_registry
+
 
 def build(service_name):
 
-    image = f"stackbridge/{service_name}:latest"
+    registry = get_registry()
+
+    server = registry.get("server", "docker.io")
+    organization = registry.get("organization", "mykaelhunter")
+    tag = registry.get("tag", "latest")
+
+    image = f"{server}/{organization}/{service_name}:{tag}"
 
     subprocess.run(
         [
