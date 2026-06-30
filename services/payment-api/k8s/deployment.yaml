@@ -2,24 +2,24 @@ apiVersion: apps/v1
 kind: Deployment
 
 metadata:
-  name: payment-api
+  name: stackbridge
 
 spec:
   replicas: 1
 
   selector:
     matchLabels:
-      app: payment-api
+      app: stackridge
 
   template:
     metadata:
       labels:
-        app: payment-api
+        app: stackbridge
 
     spec:
       containers:
-      - name: payment-api
-        image: stackbridge/payment-api:latest
+      - name: stackbridge
+        image: mykaelhunter/stackbridge:latest
 
         ports:
         - containerPort: 8000
