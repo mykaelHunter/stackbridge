@@ -6,7 +6,7 @@ app = Flask(__name__)
 @app.get("/")
 def health():
     return {
-        "service": "payment-api",
+        "service": "stackbridge",
         "status": "running"
     }
 
