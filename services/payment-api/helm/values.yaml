@@ -1,7 +1,7 @@
 replicaCount: 2
 
 image:
-  repository: f"docker.io/stackbridge/{service_name}"
+  repository: f"docker.io/mykaelhunter/{service_name}"
   tag: latest
   pullPolicy: Always
 
