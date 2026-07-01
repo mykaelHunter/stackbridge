@@ -2,10 +2,13 @@ import subprocess
 import click
 from pathlib import Path
 
+from stackbridge.core.paths import REPO_ROOT
+
 
 def deploy_chart(service_name, environment, image):
 
-    chart = Path("services") / service_name / "helm"
+    # Resolved path — same fix as core/docker.py and core/config.py.
+    chart = REPO_ROOT / "services" / service_name / "helm"
 
     click.echo("Deploying Helm chart...")
 
