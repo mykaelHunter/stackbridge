@@ -1,7 +1,5 @@
 #!/bin/bash
 
-OUTPUT_FILE="trust-policy.json"
-
 # Create the state bucket
 aws s3 mb s3://stackbridge-tf-state --region us-east-1
 

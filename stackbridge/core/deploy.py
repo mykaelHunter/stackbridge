@@ -73,7 +73,7 @@ def deploy_service(service_name, environment):
     logger.success("Helm deployment completed")
 
     logger.stage(Stage.ROLLOUT.value)
-    wait_rollout(service_name)
+    wait_rollout(service_name, environment)
     logger.success("Rollout completed")
 
     logger.stage(Stage.HEALTH.value)

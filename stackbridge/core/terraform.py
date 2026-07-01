@@ -30,9 +30,10 @@ import shutil
 import subprocess
 from pathlib import Path
 
+from stackbridge.core.paths import REPO_ROOT
+
 VALID_ENVIRONMENTS = ["dev", "staging"]
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
 ENVIRONMENTS_ROOT = REPO_ROOT / "infra" / "environments"
 POLICIES_DIR = REPO_ROOT / "infra" / "policies"
 
