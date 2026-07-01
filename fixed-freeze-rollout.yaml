@@ -2,7 +2,7 @@ apiVersion: argoproj.io/v1alpha1
 kind: Rollout
 metadata:
   name: stackbridge-flask-freeze
-  namespace: default
+  namespace: stackbridge
 spec:
   replicas: 5
   selector:

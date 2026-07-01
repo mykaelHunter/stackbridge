@@ -2,7 +2,7 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: chaos-pod-kill
-  namespace: default
+  namespace: stackbridge
 spec:
   restartPolicy: Never
   containers:
@@ -12,6 +12,10 @@ spec:
     - /bin/sh
     - -c
     - |
-      echo "Deleting 2 pods from stackbridge-flask..."
-      kubectl get pods -n default -l app=stackbridge-flask -o name | head -2 | xargs kubectl delete -n default
-      echo "Pods deleted. Watch recovery with: kubectl get pods -n default -w"
+      echo "=== Pod Kill Chaos ==="
+      echo "Deleting pods from stackbridge-api..."
+      kubectl get pods -n stackbridge -l app=stackbridge-api -o name | head -2 | xargs kubectl delete -n stackbridge
+      echo "Pods deleted. Checking recovery..."
+      sleep 30
+      kubectl get pods -n stackbridge -l app=stackbridge-api
+      echo "Pod kill complete."
