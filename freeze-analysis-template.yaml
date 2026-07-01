@@ -1,0 +1,15 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: freeze-check
+  namespace: stackbridge
+spec:
+  metrics:
+  - name: freeze-status
+    interval: 30s
+    successCondition: result == "false"
+    failureCondition: result == "true"
+    provider:
+      web:
+        url: "http://kubernetes.default.svc/api/v1/namespaces/stackbridge/configmaps/deployment-freeze"
+        jsonPath: "{.data.frozen}"
