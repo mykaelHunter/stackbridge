@@ -1,6 +1,6 @@
-from pathlib import Path
+from stackbridge.core.paths import REPO_ROOT
 
-required = [
+REQUIRED_FILES = [
     "app/app.py",
     "app/requirements.txt",
     "app/Dockerfile",
@@ -22,7 +22,10 @@ required = [
 
 def validate(service_name):
 
-    root = Path("services") / service_name
+    # Resolved path — same fix as elsewhere in core/. Without
+    # this, validate() looked for services/<name> relative to
+    # the caller's cwd, not the repo root.
+    root = REPO_ROOT / "services" / service_name
 
     if not root.exists():
         raise FileNotFoundError(

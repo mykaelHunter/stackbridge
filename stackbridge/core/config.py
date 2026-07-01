@@ -1,7 +1,8 @@
-from pathlib import Path
 import yaml
 
-CONFIG_FILE = Path("stackbridge.yaml")
+from stackbridge.core.paths import REPO_ROOT
+
+CONFIG_FILE = REPO_ROOT / "stackbridge.yaml"
 
 
 def load_config():
