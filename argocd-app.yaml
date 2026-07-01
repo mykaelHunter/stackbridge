@@ -6,7 +6,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/stackbridge/stackbridge
+    repoURL: https://github.com/mykaelHunter/stackbridge.git
     targetRevision: HEAD
     path: .
   destination:
