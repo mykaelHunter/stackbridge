@@ -1,14 +1,18 @@
-class DeploymentContext:
+from dataclasses import dataclass, field
 
-    def __init__(self, service, environment):
+from stackbridge.core.eventbus import EventBus
+from stackbridge.core.logger import Logger, get_logger
+from stackbridge.core.metrics import Timer
 
-        self.service = service
-        self.environment = environment
+@dataclass
+class PipelineContext:
 
-        self.image = None
+    service: str
+    environment: str
 
-        self.config = None
+    image: str | None = None
+    config: dict | None = None
 
-        self.logger = None
-
-        self.timer = None
+    logger: Logger = field(default_factory=get_logger)
+    timer: Timer = field(default_factory=Timer)
+    eventbus: EventBus = field(default_factory=EventBus)

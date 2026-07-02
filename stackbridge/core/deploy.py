@@ -1,5 +1,5 @@
 
-from stackbridge.pipeline.context import DeploymentContext
+from stackbridge.pipeline.context import PipelineContext
 from stackbridge.pipeline.pipeline import Pipeline
 from stackbridge.pipeline.stages.validate import ValidationStage
 from stackbridge.core.stages import Stage
@@ -31,7 +31,7 @@ def deploy_service(service_name, environment):
 
     cfg = load_config()
 
-    context = DeploymentContext(
+    context = PipelineContext(
         service_name,
         environment,
     )
@@ -44,7 +44,7 @@ def deploy_service(service_name, environment):
     ValidationStage(),
     ])
 
-    pipeline.run(context)
+    pipeline.execute(context)
 
     logger.stage(Stage.CLUSTER.value)
     check_cluster()
