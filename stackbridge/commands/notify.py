@@ -28,7 +28,7 @@ def test():
     report = DeploymentReport(
         service="stackbridge",
         environment="dev",
-        image="docker.io/stackbridge:latest",
+        image="docker.io/mykaelhunter/stackbridge:latest",
         started_at=datetime.utcnow(),
     )
 
