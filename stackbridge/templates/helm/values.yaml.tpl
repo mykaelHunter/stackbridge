@@ -9,3 +9,5 @@ service:
   port: 80
 
 containerPort: {{PORT}}
+
+env: development

@@ -9,3 +9,5 @@ service:
   port: 80
 
 containerPort: 8000
+
+env: development

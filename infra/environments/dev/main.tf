@@ -143,6 +143,16 @@ module "eks" {
   max_node_count      = 2
   capacity_type       = "SPOT"
   db_secret_arn       = module.database.secret_arn
+  # Must match exactly what modules/eso-manifests actually renders:
+  # ServiceAccount "stackbridge-eso-sa" in the "dev" namespace
+  # (see templates/serviceaccount.yaml.tftpl — name is
+  # "${service_name}-eso-sa", applied into the app's own namespace,
+  # not a separate "external-secrets" namespace). If these don't
+  # match, IRSA's AssumeRoleWithWebIdentity trust condition rejects
+  # the ServiceAccount and ExternalSecret sync fails with an auth
+  # error even though the CRDs/manifests are otherwise correct.
+  external_secrets_namespace       = local.environment
+  external_secrets_service_account = "${local.name}-eso-sa"
   tags                = local.common_tags
 }
 
@@ -157,6 +167,7 @@ module "eso_manifests" {
   environment  = local.environment
   aws_region   = var.aws_region
   role_arn     = module.eks.external_secrets_role_arn
+  namespace    = local.environment
   output_dir   = "${path.root}/../../../services/stackbridge/eso"
 }
 
