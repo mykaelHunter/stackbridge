@@ -1,19 +1,17 @@
+import os
 import yaml
-
-from stackbridge.core.paths import REPO_ROOT
-
-CONFIG_FILE = REPO_ROOT / "stackbridge.yaml"
 
 
 def load_config():
-    if not CONFIG_FILE.exists():
-        raise FileNotFoundError("stackbridge.yaml not found")
 
-    with CONFIG_FILE.open() as f:
-        return yaml.safe_load(f)
+    with open("stackbridge.yaml") as f:
+        cfg = yaml.safe_load(f)
 
+    slack_webhook = os.getenv("SLACK_WEBHOOK")
 
-def get_registry():
-    config = load_config()
+    if slack_webhook:
+        cfg.setdefault("notifications", {})
+        cfg["notifications"].setdefault("slack", {})
+        cfg["notifications"]["slack"]["webhook"] = slack_webhook
 
-    return config.get("registry", {})
+    return cfg
