@@ -10,6 +10,23 @@ from stackbridge.core.paths import REPO_ROOT
 def scaffold(service_name):
     """
     Bootstrap a new service from StackBridge templates.
+
+    For the 'stackbridge' service, the three application source
+    files (app.py, Dockerfile, requirements.txt) are pulled from
+    the repo root app/ directory rather than the generic stubs —
+    they carry the same security fixes as the production application
+    (non-root container, no hardcoded credentials, gunicorn, etc).
+
+    All services receive a chaos/ directory pre-populated with the
+    four Phase 4 experiments, rendered with the service name so
+    each manifest targets the correct service and can be applied
+    directly with kubectl.
+
+    NOTE: this command does NOT populate eso/ (the External Secrets
+    Operator manifests). Those are rendered by Terraform itself —
+    see infra/modules/eso-manifests — because they need the IRSA
+    role ARN that only exists after `terraform apply`. Run apply
+    for the target environment before `kubectl apply -f eso/`.
     """
 
     root = REPO_ROOT / "services" / service_name
@@ -20,26 +37,10 @@ def scaffold(service_name):
             f"Service '{service_name}' already exists — "
             f"checking for missing files to backfill..."
         )
-        # Deliberately NOT returning here. The old behavior
-        # bailed out entirely the moment the service directory
-        # existed, which meant a service scaffolded under an
-        # older template layout (e.g. before app/app.py replaced
-        # a root-level app.py) could never be brought up to date
-        # by re-running scaffold — it would silently no-op
-        # forever while validate() kept failing on files that
-        # were never created. The per-file existence check
-        # further down (target.exists() -> "Exists: ...") already
-        # made this safe to do; the only thing missing was not
-        # returning before reaching it.
 
     # --------------------------------------------------
     # Create directory structure
     # --------------------------------------------------
-    # 'app' added here — core/validator.py checks for
-    # app/app.py and app/requirements.txt, not service-root
-    # app.py. This was a real mismatch: a freshly scaffolded
-    # service used to fail validate() immediately because the
-    # files existed but in the wrong place.
 
     directories = [
         "app",
@@ -47,14 +48,13 @@ def scaffold(service_name):
         "helm",
         "helm/templates",
         "argocd",
+        "chaos",
+        "eso",
         ".github/workflows",
     ]
 
     for directory in directories:
-        (root / directory).mkdir(
-            parents=True,
-            exist_ok=True,
-        )
+        (root / directory).mkdir(parents=True, exist_ok=True)
 
     # --------------------------------------------------
     # Template variables
@@ -63,106 +63,102 @@ def scaffold(service_name):
     values = {
         "SERVICE_NAME": service_name,
         "PORT": 8000,
-
-        # Docker image configuration
         "IMAGE_REPOSITORY": "{{IMAGE_REPOSITORY}}",
         "IMAGE_TAG": "{{IMAGE_TAG}}",
-
-        # GitOps repository
         "REPO_URL": "https://github.com/mykaelHunter/stackbridge.git",
     }
+
+    # --------------------------------------------------
+    # Application source selection
+    # --------------------------------------------------
+    # For the 'stackbridge' service the real production files in
+    # app/ are used as the template source instead of the generic
+    # stubs. This ensures the scaffolded service has identical
+    # source to what is deployed, including the DB connection fix
+    # (context manager, no fallback password, explicit column
+    # lists) and the Dockerfile security fixes from the audit.
+    #
+    # The generic stubs are still used for all other services so
+    # they start from a working baseline they can customise.
+
+    TPLS = REPO_ROOT / "stackbridge/templates"
+    real_app = REPO_ROOT / "app"
+    use_real_app = (service_name == "stackbridge" and real_app.exists())
+
+    if use_real_app:
+        click.echo("  Using production app/ source files for stackbridge service.")
+        app_py_src      = real_app / "app.py"
+        dockerfile_src  = real_app / "Dockerfile"
+        requirements_src = real_app / "requirements.txt"
+    else:
+        app_py_src      = TPLS / "app.py.tpl"
+        dockerfile_src  = TPLS / "Dockerfile.tpl"
+        requirements_src = TPLS / "requirements.txt.tpl"
 
     # --------------------------------------------------
     # Template mapping
     # --------------------------------------------------
 
     files = {
-        # Application — now under app/ to match core/validator.py
-        "app/app.py":
-            REPO_ROOT / "stackbridge/templates/app.py.tpl",
+        # ── Application ──────────────────────────────────────
+        "app/app.py":           app_py_src,
+        "app/requirements.txt": requirements_src,
+        "app/Dockerfile":       dockerfile_src,
 
-        "app/requirements.txt":
-            REPO_ROOT / "stackbridge/templates/requirements.txt.tpl",
+        # ── Documentation ────────────────────────────────────
+        "README.md":            TPLS / "README.md.tpl",
 
-        "app/Dockerfile":
-            REPO_ROOT / "stackbridge/templates/Dockerfile.tpl",
+        # ── Kubernetes manifests ──────────────────────────────
+        "k8s/deployment.yaml":  TPLS / "deployment.yaml.tpl",
+        "k8s/service.yaml":     TPLS / "service.yaml.tpl",
+        "k8s/ingress.yaml":     TPLS / "ingress.yaml.tpl",
+        "k8s/configmap.yaml":   TPLS / "configmap.yaml.tpl",
 
-        "README.md":
-            REPO_ROOT / "stackbridge/templates/README.md.tpl",
+        # ── Helm chart ────────────────────────────────────────
+        "helm/Chart.yaml":                      TPLS / "helm/Chart.yaml.tpl",
+        "helm/values.yaml":                     TPLS / "helm/values.yaml.tpl",
+        "helm/templates/deployment.yaml":       TPLS / "helm/templates/deployment.yaml.tpl",
+        "helm/templates/service.yaml":          TPLS / "helm/templates/service.yaml.tpl",
+        "helm/templates/ingress.yaml":          TPLS / "helm/templates/ingress.yaml.tpl",
 
-        # Kubernetes
-        "k8s/deployment.yaml":
-            REPO_ROOT / "stackbridge/templates/deployment.yaml.tpl",
+        # ── ArgoCD ───────────────────────────────────────────
+        "argocd/application.yaml":  TPLS / "argocd/application.yaml.tpl",
 
-        "k8s/service.yaml":
-            REPO_ROOT / "stackbridge/templates/service.yaml.tpl",
+        # ── CI/CD ─────────────────────────────────────────────
+        ".github/workflows/deploy.yaml": TPLS / "github/deploy.yaml.tpl",
 
-        "k8s/ingress.yaml":
-            REPO_ROOT / "stackbridge/templates/ingress.yaml.tpl",
-
-        "k8s/configmap.yaml":
-            REPO_ROOT / "stackbridge/templates/configmap.yaml.tpl",
-
-        # Helm
-        "helm/Chart.yaml":
-            REPO_ROOT / "stackbridge/templates/helm/Chart.yaml.tpl",
-
-        "helm/values.yaml":
-            REPO_ROOT / "stackbridge/templates/helm/values.yaml.tpl",
-
-        "helm/templates/deployment.yaml":
-            REPO_ROOT / "stackbridge/templates/helm/templates/deployment.yaml.tpl",
-
-        "helm/templates/service.yaml":
-            REPO_ROOT / "stackbridge/templates/helm/templates/service.yaml.tpl",
-
-        "helm/templates/ingress.yaml":
-            REPO_ROOT / "stackbridge/templates/helm/templates/ingress.yaml.tpl",
-
-        # ArgoCD
-        "argocd/application.yaml":
-            REPO_ROOT / "stackbridge/templates/argocd/application.yaml.tpl",
-
-        # GitHub Actions
-        ".github/workflows/deploy.yaml":
-            REPO_ROOT / "stackbridge/templates/github/deploy.yaml.tpl",
+        # ── Chaos experiments ─────────────────────────────────
+        # Derived from chaos/ manifests in the repo root.
+        # Rendered with SERVICE_NAME so each experiment targets
+        # the correct service. Ready to kubectl apply immediately.
+        "chaos/cpu-stress.yaml":      TPLS / "chaos/cpu-stress.yaml.tpl",
+        "chaos/pod-kill.yaml":        TPLS / "chaos/pod-kill.yaml.tpl",
+        "chaos/az-failure.yaml":      TPLS / "chaos/az-failure.yaml.tpl",
+        "chaos/network-latency.yaml": TPLS / "chaos/network-latency.yaml.tpl",
     }
 
     # --------------------------------------------------
-    # Render templates
+    # Render and write
     # --------------------------------------------------
 
-    for output, template in files.items():
+    for output, source in files.items():
 
         target = root / output
 
         if target.exists():
-            click.echo(f"✓ Exists: {output}")
+            click.echo(f"  ✓ Exists: {output}")
             continue
 
-        template_path = Path(template)
+        source_path = Path(source)
 
-        if not template_path.exists():
-            raise FileNotFoundError(
-                f"Missing template: {template_path}"
-            )
+        if not source_path.exists():
+            raise FileNotFoundError(f"Missing source file: {source_path}")
 
-        content = render(
-            template_path,
-            values,
-        )
+        content = render(source_path, values)
 
-        target.parent.mkdir(
-            parents=True,
-            exist_ok=True,
-        )
-
-        target.write_text(
-            content,
-            encoding="utf-8",
-        )
-
-        click.echo(f"Generated {output}")
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(content, encoding="utf-8")
+        click.echo(f"  Generated {output}")
 
     if already_existed:
         click.echo(f"\n✓ Backfilled missing files for {service_name}")

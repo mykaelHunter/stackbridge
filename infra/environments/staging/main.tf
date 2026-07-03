@@ -126,7 +126,19 @@ module "eks" {
   min_node_count      = 1
   max_node_count      = 3
   capacity_type       = "ON_DEMAND"
+  db_secret_arn       = module.database.secret_arn
   tags                = local.common_tags
+}
+
+# ── ESO manifests ────────────────────────────────────────────
+module "eso_manifests" {
+  source = "../../modules/eso-manifests"
+
+  service_name = "stackbridge"
+  environment  = local.environment
+  aws_region   = var.aws_region
+  role_arn     = module.eks.external_secrets_role_arn
+  output_dir   = "${path.root}/../../../services/stackbridge/eso"
 }
 
 output "vpc_id" {
@@ -160,4 +172,9 @@ output "eks_cluster_endpoint" {
 output "eks_kubeconfig_command" {
   description = "Run this command to configure kubectl"
   value       = module.eks.kubeconfig_command
+}
+
+output "external_secrets_role_arn" {
+  description = "Annotate the external-secrets ServiceAccount with eks.amazonaws.com/role-arn set to this value"
+  value       = module.eks.external_secrets_role_arn
 }

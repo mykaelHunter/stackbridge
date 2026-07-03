@@ -2,7 +2,7 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: chaos-az-failure
-  namespace: default
+  namespace: stackbridge
 spec:
   restartPolicy: Never
   containers:
@@ -13,13 +13,13 @@ spec:
     - -c
     - |
       echo "=== AZ Failure Simulation ==="
-      echo "Simulating AZ failure by cordoning node..."
       NODE=$(kubectl get nodes -o name | head -1)
+      echo "Cordoning node: $NODE"
       kubectl cordon $NODE
       kubectl taint nodes $NODE failure=az-down:NoSchedule
       echo "Node cordoned. Checking rollout recovery..."
-      sleep 15
-      kubectl get rollouts -n default | grep flask
+      sleep 30
+      kubectl get rollouts -n stackbridge
       echo "Cleaning up..."
       kubectl uncordon $NODE
       kubectl taint nodes $NODE failure=az-down:NoSchedule-

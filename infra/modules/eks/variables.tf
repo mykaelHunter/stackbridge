@@ -110,6 +110,23 @@ variable "aws_region" {
   type        = string
 }
 
+variable "db_secret_arn" {
+  description = "ARN of the Secrets Manager secret holding DB credentials (module.database.secret_arn). Scopes the external-secrets IRSA role to read only this secret."
+  type        = string
+}
+
+variable "external_secrets_namespace" {
+  description = "Namespace the external-secrets-operator ServiceAccount runs in"
+  type        = string
+  default     = "external-secrets"
+}
+
+variable "external_secrets_service_account" {
+  description = "Name of the ServiceAccount external-secrets-operator (or the per-service SA used in the SecretStore) runs as. Must match exactly — IRSA trust is conditioned on this subject."
+  type        = string
+  default     = "external-secrets"
+}
+
 variable "tags" {
   description = "Tags to apply to all resources"
   type        = map(string)
