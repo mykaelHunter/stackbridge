@@ -17,6 +17,15 @@ REQUIRED_FILES = [
     "argocd/application.yaml",
 
     ".github/workflows/deploy.yaml",
+
+    # Chaos experiments — required as part of the standard
+    # service contract so chaos testing is built-in to every
+    # service, not added as an afterthought. Matches Phase 4
+    # experiment set. scaffold creates these automatically.
+    "chaos/cpu-stress.yaml",
+    "chaos/pod-kill.yaml",
+    "chaos/az-failure.yaml",
+    "chaos/network-latency.yaml",
 ]
 
 
