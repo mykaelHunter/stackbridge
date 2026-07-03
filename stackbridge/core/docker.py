@@ -19,7 +19,7 @@ def build(service_name):
     # previously given a path relative to wherever the CLI was
     # invoked from, which silently pointed at the wrong directory
     # (or nothing at all) unless run from the repo root.
-    build_context = REPO_ROOT / "services" / service_name
+    build_context = REPO_ROOT / "services" / service_name / "app"
 
     subprocess.run(
         [

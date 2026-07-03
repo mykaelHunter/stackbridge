@@ -41,7 +41,7 @@ sleep 10
 
 echo ""
 
-stackbridge create --env dev
+stackbridge environment create --env dev
 sleep 10
 
 echo ""
@@ -61,8 +61,6 @@ echo "Creating and checking service scaffold list"
 echo ""
 
 stackbridge service scaffold stackbridge
-echo ""
-stackbridge service list
 
 echo ""
 

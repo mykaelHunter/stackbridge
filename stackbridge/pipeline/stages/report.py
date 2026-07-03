@@ -11,10 +11,12 @@ class ReportStage(PipelineStage):
 
         context.logger.stage(self.name)
 
-        report(
-            context.service,
-            context.image,
-        )
+        context.success = True
+
+        context.report.finish(success=True)
+        context.report.save()
+
+        context.finished_at = context.report.finished_at
 
         context.logger.success("Deployment report generated")
 

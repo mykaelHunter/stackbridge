@@ -8,7 +8,8 @@ setup(
         "click",
         "boto3",
         "rich",
-        "PyYAML"
+        "PyYAML",
+        "requests",
     ],
     entry_points={
         "console_scripts": [

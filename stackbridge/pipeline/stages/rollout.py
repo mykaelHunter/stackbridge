@@ -12,6 +12,6 @@ class RolloutStage(PipelineStage):
 
         context.logger.stage(self.name)
 
-        wait_rollout(context.service)
+        wait_rollout(context.service, context.namespace)
 
         context.logger.success("Rollout completed")

@@ -48,7 +48,12 @@ COPY --chown=appuser:appgroup app.py .
 RUN chown appuser:appgroup /app
 
 # ── Runtime configuration ─────────────────────────────────────
-ENV DB_HOST=localhost \
+# HOME is set to /app because appuser was created with --no-create-home.
+# Without this, $HOME still points at /home/appuser (which was never
+# created), and gunicorn's arbiter fails with "Control server error:
+# Permission denied: '/home/appuser'" when it tries to write state there.
+ENV HOME=/app \
+    DB_HOST=localhost \
     DB_USER=admin \
     DB_NAME=stackbridge \
     PYTHONUNBUFFERED=1 \

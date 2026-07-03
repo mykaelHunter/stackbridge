@@ -16,7 +16,7 @@ echo "Destroying staging environment"
 
 echo ""
 
-stackbridge destroy --env staging --force
+stackbridge environment destroy --env staging --force
 
 echo ""
 
