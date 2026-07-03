@@ -8,7 +8,7 @@ class RolloutStage(PipelineStage):
 
     name = Stage.ROLLOUT.value
 
-    def run(self, context):
+    def execute(self, context):
 
         context.logger.stage(self.name)
 

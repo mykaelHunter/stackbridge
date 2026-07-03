@@ -22,6 +22,8 @@ class BuildStage(PipelineStage):
         image = build(context.service)
 
         context.image = image
+        
+        context.report.image = image
 
         context.logger.success("Docker image built")
 

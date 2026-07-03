@@ -20,3 +20,8 @@ environments:
 
   prod:
     namespace: production
+
+notifications:
+     slack:
+       enabled: true
+       

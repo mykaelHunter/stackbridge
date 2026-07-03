@@ -7,13 +7,14 @@ class EventBus:
 
         self.events = []
 
-    def emit(self, event: Event):
+    def publish(self, event):
 
         self.events.append(event)
+        
+    def all(self):
 
-        print(
-            f"[{event.timestamp:%H:%M:%S}] "
-            f"{event.type.value.upper():<12}"
-            f"{event.status:<8}"
-            f"{event.message}"
-        )
+        return self.events
+
+            
+
+ 

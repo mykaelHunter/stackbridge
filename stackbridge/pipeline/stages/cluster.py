@@ -8,7 +8,7 @@ class ClusterStage(PipelineStage):
 
     name = Stage.CLUSTER.value
 
-    def run(self, context):
+    def execute(self, context):
 
         context.logger.stage(self.name)
 

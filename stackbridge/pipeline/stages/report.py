@@ -1,6 +1,5 @@
 from stackbridge.pipeline.stage import PipelineStage
 
-from stackbridge.core.report import report
 from stackbridge.core.stages import Stage
 
 
@@ -8,7 +7,7 @@ class ReportStage(PipelineStage):
 
     name = Stage.REPORT.value
 
-    def run(self, context):
+    def execute(self, context):
 
         context.logger.stage(self.name)
 

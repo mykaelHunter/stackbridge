@@ -8,7 +8,7 @@ class PushStage(PipelineStage):
 
     name = Stage.PUSH.value
 
-    def run(self, context):
+    def execute(self, context):
 
         context.logger.stage(self.name)
 

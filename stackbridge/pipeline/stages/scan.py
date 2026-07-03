@@ -8,7 +8,7 @@ class ScanStage(PipelineStage):
 
     name = Stage.SCAN.value
 
-    def run(self, context):
+    def execute(self, context):
 
         context.logger.stage(self.name)
 

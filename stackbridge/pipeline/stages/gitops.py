@@ -8,7 +8,7 @@ class GitOpsStage(PipelineStage):
 
     name = Stage.GITOPS.value
 
-    def run(self, context):
+    def execute(self, context):
 
         if not context.config["gitops"]["enabled"]:
             return

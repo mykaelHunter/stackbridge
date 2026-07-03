@@ -8,7 +8,7 @@ class HealthStage(PipelineStage):
 
     name = Stage.HEALTH.value
 
-    def run(self, context):
+    def execute(self, context):
 
         context.logger.stage(self.name)
 

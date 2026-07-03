@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from datetime import datetime
 
@@ -35,4 +35,4 @@ class Event:
 
     message: str
 
-    timestamp: datetime = datetime.utcnow()
+    timestamp: datetime = field(default_factory=datetime.utcnow)

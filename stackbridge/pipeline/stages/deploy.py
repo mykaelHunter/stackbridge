@@ -8,7 +8,7 @@ class DeployStage(PipelineStage):
 
     name = Stage.DEPLOY.value
 
-    def run(self, context):
+    def execute(self, context):
 
         context.logger.stage(self.name)
 
