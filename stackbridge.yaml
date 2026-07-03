@@ -1,0 +1,27 @@
+registry:
+  provider: dockerhub
+  server: docker.io
+  organization: mykaelhunter
+  tag: latest
+
+gitops:
+  enabled: false
+  repository: ""
+
+deployment:
+  namespace: default
+
+environments:
+  dev:
+    namespace: dev
+
+  staging:
+    namespace: staging
+
+  prod:
+    namespace: production
+
+notifications:
+     slack:
+       enabled: true
+       

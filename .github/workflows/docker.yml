@@ -1,0 +1,215 @@
+# ============================================================
+# CI Pipeline: Docker Build & Push
+# ============================================================
+# Triggers:
+#   - Push to main (any change under app/)  → build + push
+#   - Pull request targeting main           → build + scan only (no push)
+#   - Manual trigger (workflow_dispatch)    → build + push
+#
+# What it does:
+#   1. Lint        — fail fast on Dockerfile issues (hadolint)
+#   2. Build       — multi-stage build, tagged with git SHA + semver
+#   3. Scan        — Trivy vulnerability scan, fail on CRITICAL CVEs
+#   4. Push        — push to Docker Hub on main branch only
+#   5. Summary     — post image digest and tag to job summary
+#
+# Required GitHub Secrets (Settings → Secrets → Actions):
+#   DOCKERHUB_USERNAME   Your Docker Hub username
+#   DOCKERHUB_TOKEN      Docker Hub access token (not your password)
+#                        Create at: hub.docker.com → Account Settings → Security
+#
+# Image naming convention:
+#   <username>/stackbridge-api:<git-sha>     every successful build
+#   <username>/stackbridge-api:latest        main branch only
+#   <username>/stackbridge-api:v1.2.3        when a semver tag is pushed
+# ============================================================
+
+name: Docker Build & Push
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "app/**"
+      - ".github/workflows/docker.yml"
+    tags:
+      - "v*.*.*"   # trigger on semver tags e.g. v1.0.0
+
+  pull_request:
+    branches: [main]
+    paths:
+      - "app/**"
+      - ".github/workflows/docker.yml"
+
+  workflow_dispatch:   # allow manual trigger from GitHub UI
+
+# Minimal permissions — only what each job needs
+permissions:
+  contents: read
+
+env:
+  IMAGE_NAME: stackbridge
+  DOCKERFILE_PATH: app/Dockerfile
+  BUILD_CONTEXT: app
+
+jobs:
+  # ── Job 1: Lint the Dockerfile ──────────────────────────────
+  lint:
+    name: Lint Dockerfile
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run hadolint
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: ${{ env.DOCKERFILE_PATH }}
+          # Ignore rules that conflict with our intentional choices:
+          # DL3008 - we accept unpinned apt packages in slim images
+          # DL3009 - apt cache cleaning handled by slim base
+          ignore: DL3008,DL3009
+          failure-threshold: warning
+
+  # ── Job 2: Build, Scan, Push ────────────────────────────────
+  build-and-push:
+    name: Build -> Scan -> Push
+    runs-on: ubuntu-latest
+    needs: lint   # only run if lint passes
+
+    outputs:
+      image-digest: ${{ steps.build.outputs.digest }}
+      image-tag: ${{ steps.meta.outputs.tags }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ── Set up Docker Buildx (required for multi-platform + cache) ──
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # ── Generate image tags and labels ──────────────────────
+      # Tags produced:
+      #   On push to main:        latest, sha-<short-sha>
+      #   On semver tag (v1.2.3): v1.2.3, v1.2, v1, latest
+      #   On pull request:        pr-<number> (not pushed)
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=sha,prefix=sha-,format=short
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=raw,value=latest
+            type=ref,event=pr,prefix=pr-
+          labels: |
+            org.opencontainers.image.title=StackBridge Orders API
+            org.opencontainers.image.description=Internal orders service for StackBridge platform
+            org.opencontainers.image.vendor=StackBridge
+
+      # ── Log in to Docker Hub (push jobs only) ────────────────
+      # On pull requests we don't push, so we don't need to log in.
+      - name: Log in to Docker Hub
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # ── Build the image ──────────────────────────────────────
+      # On pull requests: build only, do not push (load into local daemon for scan)
+      # On main / tags:   build and push
+      - name: Build image
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ env.BUILD_CONTEXT }}
+          file: ${{ env.DOCKERFILE_PATH }}
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          # Load into local Docker daemon so Trivy can scan it on PRs
+          load: ${{ github.event_name == 'pull_request' }}
+          # Layer caching via GitHub Actions cache
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            BUILD_DATE=${{ github.event.head_commit.timestamp }}
+            GIT_SHA=${{ github.sha }}
+
+      # ── Vulnerability scan (Trivy) ───────────────────────────
+      # Scans the built image for OS and library CVEs.
+      # CRITICAL severity fails the build.
+      # HIGH severity is reported but does not block (for now).
+      #
+      # Image source logic:
+      #   - PRs:       image loaded into local Docker daemon (load: true above)
+      #                scan locally — no registry auth needed
+      #   - main/tags: image pushed to Docker Hub
+      #                scan remotely using DOCKERHUB_TOKEN
+      #
+      # Uses `latest` tag for push events because it is always present
+      # and avoids the short-SHA format mismatch that caused the previous error.
+      - name: Scan image with Trivy (PR - local daemon)
+        if: github.event_name == 'pull_request'
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:pr-${{ github.event.number }}
+          format: table
+          exit-code: "1"
+          ignore-unfixed: true
+          severity: CRITICAL,HIGH
+          vuln-type: os,library
+
+      - name: Scan image with Trivy (push - remote registry)
+        if: github.event_name != 'pull_request'
+        uses: aquasecurity/trivy-action@master
+        env:
+          TRIVY_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          TRIVY_PASSWORD: ${{ secrets.DOCKERHUB_TOKEN }}
+        with:
+          image-ref: ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:latest
+          format: table
+          exit-code: "1"
+          ignore-unfixed: true
+          severity: CRITICAL,HIGH
+          vuln-type: os,library
+
+      # ── Post summary to GitHub Actions UI ────────────────────
+      - name: Write job summary
+        if: always()
+        run: |
+          echo "## Docker Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Field | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Image | \`${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Digest | \`${{ steps.build.outputs.digest }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Tags | \`${{ steps.meta.outputs.tags }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Commit | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Branch | \`${{ github.ref_name }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Triggered by | \`${{ github.event_name }}\` |" >> $GITHUB_STEP_SUMMARY
+
+  # ── Job 3: Notify on failure ─────────────────────────────────
+  # Wires into the on-call process defined in the service catalogue.
+  notify-on-failure:
+    name: Notify on failure
+    runs-on: ubuntu-latest
+    needs: [lint, build-and-push]
+    if: failure() && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Post failure notice
+        run: |
+          echo "::error::Docker build/push failed on main branch."
+          echo "Check the build-and-push job logs."
+          echo "On-call channel: #platform"
+          # TODO Phase 2: replace with Slack webhook
+          # curl -X POST ${{ secrets.SLACK_WEBHOOK_URL }} \
+          #   -H 'Content-type: application/json' \
+          #   --data '{"text":"Docker build failed on main: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"}'

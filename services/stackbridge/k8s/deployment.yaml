@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: stackbridge
+
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: stackridge
+
+  template:
+    metadata:
+      labels:
+        app: stackbridge
+
+    spec:
+      containers:
+      - name: stackbridge
+        image: mykaelhunter/stackbridge:latest
+
+        ports:
+        - containerPort: 8000

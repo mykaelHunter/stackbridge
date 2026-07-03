@@ -1,0 +1,40 @@
+# Chaos Experiment 1b: AZ Failure Simulation
+# ===========================================
+# Hypothesis: If all compute in one AZ is cordoned, {{SERVICE_NAME}}
+# fails over in under 60 seconds and continues serving traffic.
+#
+# Run:   kubectl apply -f chaos/az-failure.yaml
+# Watch: kubectl get nodes -w && kubectl get rollouts -n stackbridge
+# Clean: kubectl delete -f chaos/az-failure.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{SERVICE_NAME}}-az-failure
+  namespace: {{NAMESPACE}}
+  labels:
+    app: chaos
+    experiment: az-failure
+    target-service: {{SERVICE_NAME}}
+    managed-by: stackbridge-idp
+spec:
+  restartPolicy: Never
+  serviceAccountName: chaos-sa
+  containers:
+    - name: chaos
+      image: bitnami/kubectl:latest
+      command:
+        - /bin/sh
+        - -c
+        - |
+          echo "=== AZ Failure Simulation — {{SERVICE_NAME}} ==="
+          NODE=$(kubectl get nodes -o name | head -1)
+          echo "Cordoning node: $NODE"
+          kubectl cordon $NODE
+          kubectl taint nodes $NODE failure=az-down:NoSchedule
+          echo "Node cordoned. Checking {{SERVICE_NAME}} rollout recovery..."
+          sleep 30
+          kubectl get rollouts -n {{NAMESPACE}}
+          echo "Cleaning up..."
+          kubectl uncordon $NODE
+          kubectl taint nodes $NODE failure=az-down:NoSchedule-
+          echo "AZ failure simulation complete."

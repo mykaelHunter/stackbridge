@@ -1,0 +1,28 @@
+services:
+
+  - name: stackbridge
+    owner: platform
+    description: StackBridge Platform CLI
+    language: python
+    runtime: flask
+    repository: https://github.com/mykaelHunter/stackbridge
+    namespace: platform
+    deployment: kubernetes
+    environments:
+      - dev
+      - stage
+      - prod
+    port: 8000
+
+  
+  - name: user-api
+    owner: backend-team
+    runtime: python
+    port: 8001
+    description: User management service
+
+  - name: notification-api
+    owner: platform
+    runtime: python
+    port: 8002
+    description: Notification service
