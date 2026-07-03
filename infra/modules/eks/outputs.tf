@@ -33,6 +33,11 @@ output "node_group_role_arn" {
   value       = aws_iam_role.node.arn
 }
 
+output "external_secrets_role_arn" {
+  description = "IAM role ARN for the external-secrets IRSA ServiceAccount — annotate the SA with eks.amazonaws.com/role-arn set to this value"
+  value       = aws_iam_role.external_secrets.arn
+}
+
 output "kubeconfig_command" {
   description = "Run this to configure kubectl for this cluster"
   value       = "aws eks update-kubeconfig --name ${aws_eks_cluster.this.name} --region ${var.aws_region}"

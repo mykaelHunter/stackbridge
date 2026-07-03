@@ -41,3 +41,14 @@ tfplan.binary
 
 # Ignore platform artifacts
 stackbridge_platform.egg-info/
+
+# Prevent template files leaking to repo root
+# They belong in stackbridge/templates/ only
+/*.tpl
+
+# Prevent Terraform provider cache from being committed
+# (was 700MB+ when it slipped in during a previous session)
+**/.terraform/providers/
+
+# Conftest installs its own LICENSE file when run locally
+infra/environments/*/LICENSE
