@@ -36,6 +36,8 @@ aws s3api delete-objects \
     --output json \
     --query '{Objects: DeleteMarkers[].{Key:Key,VersionId:VersionId}}')"
 
+aws s3 rb s3://stackbridge-tf-state
+
 echo ""
 
 echo "Successful"
