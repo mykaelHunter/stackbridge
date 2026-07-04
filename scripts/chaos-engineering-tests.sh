@@ -22,7 +22,19 @@ stackbridge service scaffold network-latency
 # Running tests
 echo "Running cpu-stress tests"
 stackbridge service chaos run stress cpu-stress --env $ENV
+sleep 5
+
+echo ""
+
+echo "Running az-failure tests"
 stackbridge service chaos run stress az-failure --env $ENV
+sleep 5
+
+echo ""
+
+echo "Running network-latency"
 stackbridge service chaos run stress network-latency --env $ENV
+
+echo "successful"
 
 

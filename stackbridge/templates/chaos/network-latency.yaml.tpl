@@ -5,7 +5,7 @@
 # to unrelated services in the namespace.
 #
 # Configure after pod is Running:
-#   kubectl port-forward pod/{{SERVICE_NAME}}-network-chaos 8474:8474
+#   kubectl port-forward pod/{{SERVICE_NAME}}-network-latency 8474:8474
 #
 #   # Create a proxy pointing at your downstream target
 #   curl -X POST http://localhost:8474/proxies \
@@ -17,13 +17,13 @@
 #     -H "Content-Type: application/json" \
 #     -d '{"name":"latency","type":"latency","attributes":{"latency":500,"jitter":100}}'
 #
-# Watch: kubectl logs {{SERVICE_NAME}}-network-chaos -c observer
+# Watch: kubectl logs {{SERVICE_NAME}}-network-latency -c observer
 # Measure: p95 latency of {{SERVICE_NAME}}, error rate on endpoints
 # Clean: kubectl delete -f chaos/network-latency.yaml
 apiVersion: v1
 kind: Pod
 metadata:
-  name: {{SERVICE_NAME}}-network-chaos
+  name: {{SERVICE_NAME}}-network-latency
   namespace: {{NAMESPACE}}
   labels:
     app: chaos

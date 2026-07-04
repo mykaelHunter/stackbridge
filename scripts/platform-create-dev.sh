@@ -103,7 +103,7 @@ pip install -e .
 
 echo ""
 
-stackbridge environment bootstrap-secrets --env dev
+stackbridge environment bootstrap-secrets stackbridge --env dev
 stackbridge service deploy stackbridge --env dev
 
 echo "Successful"
