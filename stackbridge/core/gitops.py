@@ -63,7 +63,19 @@ def register(service, environment):
         )
 
     namespace = get_namespace(environment)
-    rendered = manifest_path.read_text().replace("{{NAMESPACE}}", namespace)
+    rendered = (
+        manifest_path.read_text()
+        .replace("{{NAMESPACE}}", namespace)
+        # Chart's configmap.yaml requires .Values.env via `required(...)`,
+        # and unlike `stackbridge service deploy` (which passes
+        # --set env=<environment> via core/helm.py), ArgoCD renders the
+        # chart itself and has no way to know this value unless it's
+        # baked into source.helm.parameters here. Without it, `argocd
+        # app sync` fails with "env is required — pass --set env=
+        # <environment> at deploy time" even though the Application
+        # looks correctly configured otherwise.
+        .replace("{{ENVIRONMENT}}", environment)
+    )
 
     click.echo(f"Registering '{service}' with ArgoCD (namespace: {namespace})...")
 

@@ -17,6 +17,14 @@ spec:
 
     path: services/stackbridge/helm
 
+    helm:
+
+      parameters:
+
+        - name: env
+
+          value: {{ENVIRONMENT}}
+
   destination:
 
     server: https://kubernetes.default.svc
