@@ -10,4 +10,3 @@ service:
 
 containerPort: 8000
 
-env: development

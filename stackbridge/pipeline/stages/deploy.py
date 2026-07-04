@@ -19,6 +19,7 @@ class DeployStage(PipelineStage):
             context.service,
             context.namespace,
             context.image,
+            context.environment,
         )
 
         context.logger.success("Helm deployment completed")

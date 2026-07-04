@@ -4,7 +4,7 @@
 # fails over in under 60 seconds and continues serving traffic.
 #
 # Run:   kubectl apply -f chaos/az-failure.yaml
-# Watch: kubectl get nodes -w && kubectl get rollouts -n {{NAMESPACE}}
+# Watch: kubectl get nodes -w && kubectl get rollouts -n stackbridge
 # Clean: kubectl delete -f chaos/az-failure.yaml
 apiVersion: v1
 kind: Pod
