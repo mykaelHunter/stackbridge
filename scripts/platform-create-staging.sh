@@ -100,7 +100,7 @@ pip install -e .
 
 echo ""
 
-stackbridge environment bootstrap-secrets --env staging   # → eso/staging
+stackbridge environment bootstrap-secrets stackbridge --env staging   # → eso/staging
 stackbridge service deploy stackbridge --env staging
 
 echo ""
