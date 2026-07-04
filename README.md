@@ -1,48 +1,97 @@
 # StackBridge
 
-internal platform for orders and users
+Internal platform for orders and users.
 
-## running it
+## Overview
 
-```
+This repository contains:
+
+- `app/` — production Flask application source and Dockerfile
+- `database/` — local PostgreSQL schema used by development compose
+- `infra/` — Terraform modules, environment configs, and policy checks
+- `stackbridge/` — Python CLI and platform engine
+- `scripts/` — operational helper scripts for environment creation, teardown, and chaos testing
+- `docs/` — project documentation, including runbook and architecture guides
+
+## Local development
+
+Start the local developer environment:
+
+```bash
 docker-compose up
 ```
 
-app is on port 5000
+- app: `http://localhost:5000`
+- db: PostgreSQL on `localhost:5432`
+- redis: `localhost:6379`
+- adminer: `http://localhost:8080`
 
-db is postgres on 5432
+Reset the local database:
 
-## infra
+```bash
+docker-compose down -v
+docker-compose up
+```
 
-terraform is in infra/legacy. you need AWS creds.
-ask jake for the state file if you don't have it.
-do not run terraform destroy.
+The local compose stack is for development and validation only.
 
-## database
+## Infrastructure
 
-schema is in database/schema.sql
-to reset the db: docker-compose down -v then up again
-for prod: ask jake
+The current infrastructure is defined under `infra/`.
+The project includes:
 
-## deploying
+- `infra/modules/` — reusable Terraform modules for network, compute, database, storage, EKS, and ESO manifests
+- `infra/environments/` — per-environment Terraform configuration for `dev` and `staging`
+- `infra/policies/` — OPA security and tagging policies
 
-SSH into the server and pull the latest docker image.
-Server IP: ask jake (it changes sometimes)
+> Note: `infra/legacy/` exists as older Terraform material, but the active environment provisioning workflow is under `infra/environments/`.
 
-## on call
+## Scripts
 
-if something breaks, message the #dev channel
-jake usually responds
+The `scripts/` directory contains helper scripts for common platform workflows:
 
-## known issues
+- `platform-create-dev.sh`
+- `platform-create-staging.sh`
+- `platform-destroy-dev.sh`
+- `platform-destroy-staging.sh`
+- `chaos-engineering-tests.sh`
 
-- the /internal/debug endpoint should be removed but we need it for now
-- staging and prod use the same db password (for now)
-- backups: jake does these manually, see him for the schedule
-- the orders endpoint is a bit slow sometimes, not sure why
-- don't touch the terraform state file
+Use these scripts to bootstrap and tear down temporary dev/staging environments and to exercise built-in chaos scenarios.
 
-## contacts
+## CLI
 
-jake (left the company in march)
-Now that you have been hired as the first platform engineer at StackBridge. This repository is everything Jake left behind. Your job starts here.
+Install the repository locally and use the `stackbridge` CLI:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install --upgrade pip
+pip install -e .
+```
+
+Primary commands:
+
+- `stackbridge environment create --env dev`
+- `stackbridge environment create --env staging`
+- `stackbridge environment destroy --env dev --force`
+- `stackbridge environment destroy --env staging --force`
+- `stackbridge environment status --env dev`
+- `stackbridge environment bootstrap-secrets stackbridge --env dev`
+- `stackbridge service scaffold <service_name>`
+- `stackbridge service deploy <service_name> --env dev`
+- `stackbridge service chaos run <service_name> <experiment> --env dev`
+
+## Documentation
+
+The detailed operational docs are located in `docs/`:
+
+- `docs/AUDIT.md` — initial platform audit and findings summary
+- `docs/runbook.md` — operational runbook for platform workflows
+- `docs/architecture.md` — system architecture and design overview
+
+## Known issues and warnings
+
+- Do not run Terraform destroy against production from this repo.
+- The local `docker-compose.yml` stack uses hardcoded local credentials and is not suitable for production.
+- The repository uses AWS Secrets Manager / External Secrets Operator for deployed secret management.
+- Production deployment workflows are intentionally separated from local environment provisioning.
