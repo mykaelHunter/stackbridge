@@ -238,7 +238,7 @@ jobs:
       - name: Update values.yaml
         run: |
           VALUES_FILE=services/stackbridge/helm/values.yaml
-          NEW_TAG="${{ steps.image.outputs.tag }}"
+          NEW_TAG="latest"
           NEW_REPO="${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}"
 
           sed -i "s|^\(\s*repository: \).*|\1\"${NEW_REPO}\"|" "$VALUES_FILE"
