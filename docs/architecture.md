@@ -70,22 +70,22 @@ Operational helper scripts for the repository:
 - `platform-destroy-staging.sh`
 - `chaos-engineering-tests.sh`
 
-These scripts automate environment bootstrap, teardown, and chaos experiment execution.
+These scripts automate environment bootstrap, teardown, and chaos experiment execution. In particular, `platform-create-staging.sh` now handles environment validation, remote state bootstrap, monitoring bootstrap, service scaffolding, and a package refresh before deployment.
 
 ## Deployment flow
 
 ### Environment provisioning
 
-1. Bootstrap remote state bucket and DynamoDB lock table (shared state for all environments)
-2. Run `stackbridge environment create --env <dev|staging>`
+1. Load environment configuration from `scripts/.env` and validate the Slack webhook setting used by the staging bootstrap flow.
+2. Bootstrap the shared remote state bucket `stackbridge-tf-state` with versioning and encryption, then prepare the Terraform backend for the target environment.
+3. Run `stackbridge environment create --env <dev|staging>`
    - Terraform init
    - Terraform plan
    - Policy check via `conftest` against `infra/policies/`
    - Terraform apply
-3. Update Kubernetes context with `aws eks update-kubeconfig`
-4. Install the External Secrets Operator if needed
-5. Apply Terraform-generated `eso/` manifests for service secrets
-6. Deploy the service with `stackbridge service deploy <service_name> --env <env>`
+4. Update the Kubernetes context with `aws eks update-kubeconfig` and scaffold the `stackbridge` service.
+5. Clear Python cache artifacts and reinstall the local package so the current source is deployed.
+6. Apply Terraform-generated `eso/` manifests for service secrets, deploy the service with `stackbridge service deploy <service_name> --env <env>`, and bootstrap monitoring resources from `monitoring-values.yaml`.
 
 ### Service scaffolding and deployment
 

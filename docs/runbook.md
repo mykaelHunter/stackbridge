@@ -77,13 +77,17 @@ cd /home/mykaelhunter/Documents/stackbridge/scripts
 
 ### What the create scripts do
 
+- load the script environment from `scripts/.env` and validate the `SLACK_WEBHOOK` setting before continuing
 - create or verify the shared Terraform remote state bucket `stackbridge-tf-state`
 - enable versioning and encryption on the S3 bucket
 - create a Python virtual environment and install the project package
 - provision the target environment via `stackbridge environment create --env <env>`
 - update `kubectl` config for the EKS cluster
 - scaffold the `stackbridge` service
-- bootstrap ESO secrets and deploy the service
+- clear cached Python artifacts and reinstall the package so the latest code is deployed
+- bootstrap ESO secrets, deploy the service, and bootstrap monitoring with `monitoring-values.yaml`
+
+The staging provisioning flow also expects a Terraform variables file for the Amazon Linux AMI ID and pauses briefly to allow AWS and EKS readiness between key steps.
 
 ### What the destroy scripts do
 
