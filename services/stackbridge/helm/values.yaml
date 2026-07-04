@@ -2,7 +2,7 @@ replicaCount: 2
 
 image:
   repository: "mykaelhunter/stackbridge"
-  tag: "sha-c1851bf"
+  tag: "latest"
   pullPolicy: Always
 
 service:
