@@ -42,7 +42,6 @@ tfplan.binary
 
 # Ignore platform artifacts
 stackbridge_platform.egg-info/
-services/
 
 # Prevent template files leaking to repo root
 # They belong in stackbridge/templates/ only

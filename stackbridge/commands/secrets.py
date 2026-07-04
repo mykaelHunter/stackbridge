@@ -1,6 +1,7 @@
 import click
 
 from stackbridge.core.eso import install_eso, apply_eso_manifests, EsoError
+from stackbridge.core.kubernetes import ensure_namespace, KubernetesError
 from stackbridge.core.paths import REPO_ROOT
 
 
@@ -56,9 +57,17 @@ def bootstrap_secrets(service_name, env, eso_dir, skip_operator_install):
         if not skip_operator_install:
             install_eso()
 
+        # The eso/<env> manifests (SecretStore, ExternalSecret,
+        # ServiceAccount) target the `env` namespace, but bootstrap-secrets
+        # is meant to run BEFORE `service deploy`, so that namespace may
+        # not exist yet. Ensure it does first (idempotent).
+        ensure_namespace(env)
+
         apply_eso_manifests(resolved_eso_dir)
 
     except EsoError as exc:
+        raise click.ClickException(str(exc))
+    except KubernetesError as exc:
         raise click.ClickException(str(exc))
 
     click.echo(f"✓ Secrets bootstrap complete ({service_name}, {env})")
