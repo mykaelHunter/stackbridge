@@ -1,6 +1,11 @@
 import click
 
 from stackbridge.core.terraform import provision, TerraformError
+from stackbridge.core.kubernetes import (
+    check_cluster,
+    ensure_argocd_installed,
+    KubernetesError,
+)
 
 
 @click.command()
@@ -23,3 +28,17 @@ def create(env):
             click.echo(f"  {key} = {val.get('value', 'N/A')}")
     else:
         click.echo("(no outputs returned)")
+
+    click.echo("\nChecking for ArgoCD...")
+    try:
+        check_cluster()
+        ensure_argocd_installed()
+    except KubernetesError as e:
+        click.echo(f"Failed to install ArgoCD: {e}", err=True)
+        raise SystemExit(1)
+
+    click.echo(
+        "✓ ArgoCD is installed. Get the initial admin password with:\n"
+        "  kubectl -n argocd get secret argocd-initial-admin-secret "
+        "-o jsonpath=\"{.data.password}\" | base64 -d"
+    )

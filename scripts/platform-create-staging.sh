@@ -2,8 +2,6 @@
 
 set -euo pipefail
 
-#!/bin/bash
-
 # Create the state bucket
 echo "Creating backend s3 bucket for state locking"
 
@@ -41,7 +39,7 @@ sleep 10
 
 echo ""
 
-stackbridge create --env staging
+stackbridge environment create --env staging
 sleep 10
 
 echo ""
@@ -61,8 +59,6 @@ echo "Creating and checking service scaffold list"
 echo ""
 
 stackbridge service scaffold stackbridge
-echo ""
-stackbridge service list
 
 echo ""
 

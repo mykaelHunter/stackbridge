@@ -3,6 +3,7 @@ import click
 from stackbridge.commands.service import service
 from stackbridge.commands.catalog import catalog
 from stackbridge.commands.notify import notify
+from stackbridge.commands.environment import environment
 
 @click.group()
 def cli():
@@ -12,3 +13,4 @@ def cli():
 cli.add_command(service)
 cli.add_command(catalog)
 cli.add_command(notify)
+cli.add_command(environment)

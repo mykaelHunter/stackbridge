@@ -19,11 +19,22 @@ def test():
 
     cfg = load_config()
 
-    slack_cfg = cfg["notifications"]["slack"]
+    slack_cfg = cfg.get("notifications", {}).get("slack", {})
 
-    if not slack_cfg["enabled"]:
+    if not slack_cfg.get("enabled"):
         click.echo("Slack notifications are disabled.")
         return
+
+    webhook = slack_cfg.get("webhook")
+
+    if not webhook:
+        click.echo(
+            "Slack notifications are enabled but no webhook is configured — "
+            "set the SLACK_WEBHOOK environment variable or "
+            "notifications.slack.webhook in stackbridge.yaml.",
+            err=True,
+        )
+        raise SystemExit(1)
 
     report = DeploymentReport(
         service="stackbridge",
@@ -57,7 +68,7 @@ def test():
     ]
 
     SlackNotifier(
-        slack_cfg["webhook"]
+        webhook
     ).send(report)
 
     click.secho(

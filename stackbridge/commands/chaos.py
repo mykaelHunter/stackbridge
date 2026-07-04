@@ -41,10 +41,15 @@ def list_cmd(service_name):
     default=True,
     help="Tail the experiment pod's logs until it completes (default: on).",
 )
-def run_cmd(service_name, experiment, follow):
+@click.option(
+    "--env",
+    default="dev",
+    help="Target environment (dev/staging/prod) — determines the namespace.",
+)
+def run_cmd(service_name, experiment, follow, env):
     """Apply a chaos experiment manifest and optionally follow its logs."""
     try:
-        run_experiment(service_name, experiment, follow=follow)
+        run_experiment(service_name, experiment, follow=follow, environment=env)
     except ChaosError as e:
         click.echo(f"Failed: {e}", err=True)
         raise SystemExit(1)
@@ -53,10 +58,15 @@ def run_cmd(service_name, experiment, follow):
 @chaos.command(name="clean")
 @click.argument("service_name")
 @click.argument("experiment", type=click.Choice(EXPERIMENTS))
-def clean_cmd(service_name, experiment):
+@click.option(
+    "--env",
+    default="dev",
+    help="Target environment (dev/staging/prod) — determines the namespace.",
+)
+def clean_cmd(service_name, experiment, env):
     """Delete a chaos experiment's Pod from the cluster."""
     try:
-        cleanup_experiment(service_name, experiment)
+        cleanup_experiment(service_name, experiment, environment=env)
     except ChaosError as e:
         click.echo(f"Failed: {e}", err=True)
         raise SystemExit(1)

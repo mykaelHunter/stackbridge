@@ -8,8 +8,6 @@ from stackbridge.core.events import (
     DeploymentEvent,
 )
 
-from stackbridge.core.eventbus import EventBus
-
 
 class BuildStage(PipelineStage):
 
@@ -27,13 +25,12 @@ class BuildStage(PipelineStage):
 
         context.logger.success("Docker image built")
 
-        bus = EventBus()
-
-        bus.emit(
-            Event(
-                type=DeploymentEvent.BUILD,
-                service=context.service,
-                status="SUCCESS",
-                message="Docker image built",
-            )
+        event = Event(
+            type=DeploymentEvent.BUILD,
+            service=context.service,
+            status="SUCCESS",
+            message="Docker image built",
         )
+
+        context.eventbus.publish(event)
+        context.report.add_event(event)

@@ -16,7 +16,7 @@ echo "Destroying dev environment"
 
 echo ""
 
-stackbridge destroy --env dev --force
+stackbridge environment destroy --env dev --force
 
 echo ""
 

@@ -4,13 +4,13 @@
 # fails over in under 60 seconds and continues serving traffic.
 #
 # Run:   kubectl apply -f chaos/az-failure.yaml
-# Watch: kubectl get nodes -w && kubectl get rollouts -n stackbridge
+# Watch: kubectl get nodes -w && kubectl get rollouts -n {{NAMESPACE}}
 # Clean: kubectl delete -f chaos/az-failure.yaml
 apiVersion: v1
 kind: Pod
 metadata:
   name: stackbridge-az-failure
-  namespace: stackbridge
+  namespace: {{NAMESPACE}}
   labels:
     app: chaos
     experiment: az-failure
@@ -33,7 +33,7 @@ spec:
           kubectl taint nodes $NODE failure=az-down:NoSchedule
           echo "Node cordoned. Checking stackbridge rollout recovery..."
           sleep 30
-          kubectl get rollouts -n stackbridge
+          kubectl get rollouts -n {{NAMESPACE}}
           echo "Cleaning up..."
           kubectl uncordon $NODE
           kubectl taint nodes $NODE failure=az-down:NoSchedule-

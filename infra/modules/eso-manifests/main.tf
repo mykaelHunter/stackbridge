@@ -27,6 +27,7 @@ resource "local_file" "serviceaccount" {
   content = templatefile("${path.module}/templates/serviceaccount.yaml.tftpl", {
     service_name = var.service_name
     role_arn     = var.role_arn
+    namespace    = var.namespace
   })
 }
 
@@ -36,6 +37,7 @@ resource "local_file" "secretstore" {
   content = templatefile("${path.module}/templates/secretstore.yaml.tftpl", {
     service_name = var.service_name
     aws_region   = var.aws_region
+    namespace    = var.namespace
   })
 }
 
@@ -45,5 +47,6 @@ resource "local_file" "external_secret" {
   content = templatefile("${path.module}/templates/external-secret.yaml.tftpl", {
     service_name = var.service_name
     environment  = var.environment
+    namespace    = var.namespace
   })
 }

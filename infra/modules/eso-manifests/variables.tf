@@ -28,3 +28,8 @@ variable "output_dir" {
   description = "Directory the rendered manifests are written to, e.g. \"$${path.root}/../../../services/stackbridge/eso\". Must already exist or be creatable — Terraform's local provider creates it if missing."
   type        = string
 }
+
+variable "namespace" {
+  description = "Kubernetes namespace these manifests are applied into — must match the app Deployment's namespace (get_namespace(environment) in stackbridge/core/config.py) and the external_secrets_namespace passed to the eks module's IRSA trust policy. Without this, kubectl apply falls back to the caller's default context namespace, which silently breaks the ExternalSecret -> Secret sync."
+  type        = string
+}

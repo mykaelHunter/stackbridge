@@ -16,8 +16,20 @@ class NotifyStage(PipelineStage):
 
             return
 
+        webhook = slack.get("webhook")
+
+        if not webhook:
+
+            context.logger.warning(
+                "Slack notifications are enabled but no webhook is "
+                "configured — set the SLACK_WEBHOOK environment variable "
+                "or notifications.slack.webhook in stackbridge.yaml. "
+                "Skipping notification."
+            )
+            return
+
         SlackNotifier(
 
-            slack["webhook"]
+            webhook
 
         ).send(context.report)

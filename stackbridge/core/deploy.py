@@ -20,6 +20,7 @@ from stackbridge.pipeline.stages.report import ReportStage
 from stackbridge.pipeline.stages.notify import NotifyStage
 
 from stackbridge.core.config import load_config
+from stackbridge.core.report import DeploymentReport
 
 def deploy_service(service_name, environment):
 
@@ -29,6 +30,13 @@ def deploy_service(service_name, environment):
     )
 
     context.config = load_config()
+
+    context.report = DeploymentReport(
+        service=service_name,
+        environment=environment,
+        image="",
+        started_at=context.started_at,
+    )
 
     pipeline = Pipeline([
         ValidationStage(),
