@@ -1,8 +1,8 @@
 replicaCount: 2
 
 image:
-  repository: f"docker.io/mykaelhunter/{service_name}"
-  tag: latest
+  repository: "{{IMAGE_REPOSITORY}}"
+  tag: "{{IMAGE_TAG}}"
   pullPolicy: Always
 
 service:

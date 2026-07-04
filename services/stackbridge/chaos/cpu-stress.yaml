@@ -10,7 +10,7 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: stackbridge-cpu-stress
-  namespace: stackbridge
+  namespace: {{NAMESPACE}}
   labels:
     app: chaos
     experiment: cpu-stress

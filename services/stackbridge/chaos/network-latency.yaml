@@ -24,7 +24,7 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: stackbridge-network-chaos
-  namespace: stackbridge
+  namespace: {{NAMESPACE}}
   labels:
     app: chaos
     experiment: network-latency

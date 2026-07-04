@@ -66,6 +66,12 @@ def scaffold(service_name):
         "IMAGE_REPOSITORY": "{{IMAGE_REPOSITORY}}",
         "IMAGE_TAG": "{{IMAGE_TAG}}",
         "REPO_URL": "https://github.com/mykaelHunter/stackbridge.git",
+        # NAMESPACE is deliberately left unrendered here (see the
+        # {{NAMESPACE}} placeholder surviving render() below) — chaos
+        # manifests can run against any environment's namespace
+        # (dev/staging/prod), so the real value is substituted at
+        # `stackbridge service chaos run --env ...` time, not baked
+        # in once at scaffold time. See core/chaos.py.
     }
 
     # --------------------------------------------------
