@@ -25,6 +25,14 @@ spec:
 
           value: {{ENVIRONMENT}}
 
+        - name: image.repository
+
+          value: {{IMAGE_REPOSITORY}}
+
+        - name: image.tag
+
+          value: "{{IMAGE_TAG}}"
+
   destination:
 
     server: https://kubernetes.default.svc

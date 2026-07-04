@@ -2,7 +2,7 @@ import subprocess
 import click
 
 from stackbridge.core.paths import REPO_ROOT
-from stackbridge.core.config import get_namespace
+from stackbridge.core.config import get_namespace, get_registry
 
 
 def commit(service, version):
@@ -63,6 +63,23 @@ def register(service, environment):
         )
 
     namespace = get_namespace(environment)
+
+    # values.yaml's image.repository/image.tag are literal placeholder
+    # strings ("{{IMAGE_REPOSITORY}}" / "{{IMAGE_TAG}}") by design — they
+    # are always meant to be overridden at render time, the same way
+    # `env` is. core/helm.py's deploy_chart() does this via
+    # `--set image.repository=... --set image.tag=...`, but ArgoCD
+    # renders the chart itself and has no equivalent unless it's baked
+    # into source.helm.parameters here. Without it, the deployment gets
+    # the literal placeholder text as its image and pods fail with
+    # InvalidImageName.
+    registry = get_registry()
+    image_repository = (
+        f"{registry.get('server', '')}/"
+        f"{registry.get('organization', '')}/{service}"
+    )
+    image_tag = registry.get("tag", "latest")
+
     rendered = (
         manifest_path.read_text()
         .replace("{{NAMESPACE}}", namespace)
@@ -75,6 +92,8 @@ def register(service, environment):
         # <environment> at deploy time" even though the Application
         # looks correctly configured otherwise.
         .replace("{{ENVIRONMENT}}", environment)
+        .replace("{{IMAGE_REPOSITORY}}", image_repository)
+        .replace("{{IMAGE_TAG}}", image_tag)
     )
 
     click.echo(f"Registering '{service}' with ArgoCD (namespace: {namespace})...")
