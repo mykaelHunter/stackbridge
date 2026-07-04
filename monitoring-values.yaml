@@ -1,0 +1,47 @@
+# kube-prometheus-stack values — expose Prometheus, Grafana, and
+# Alertmanager via LoadBalancer Services.
+#
+# SECURITY WARNING: none of these three have authentication enabled
+# by default in this chart.
+#   - Grafana does have a login screen, but the default admin
+#     password is chart-generated/predictable unless you set one
+#     explicitly (see grafana.adminPassword below) — treat this as
+#     required, not optional, before exposing it publicly.
+#   - Prometheus and Alertmanager have NO auth at all out of the box.
+#     Anyone who can reach the LoadBalancer's external IP can read
+#     all metrics/alerts and hit Alertmanager's API (silence alerts,
+#     etc). If your cloud LB is internet-facing by default (true for
+#     AWS NLB/ELB unless annotated otherwise), this exposes both
+#     services to the entire internet.
+#
+# Strongly consider one of:
+#   1. An internal-only LB (see the AWS annotation below, swap for
+#      your cloud's equivalent) so it's only reachable from inside
+#      your VPC.
+#   2. Putting these behind an authenticating reverse proxy /
+#      ingress instead of LoadBalancer Services directly.
+#   3. Restricting via security group / NetworkPolicy to known IPs.
+
+prometheus:
+  service:
+    type: LoadBalancer
+    # Uncomment for AWS internal-only NLB instead of internet-facing:
+    # annotations:
+    #   service.beta.kubernetes.io/aws-load-balancer-scheme: internal
+
+grafana:
+  service:
+    type: LoadBalancer
+    # annotations:
+    #   service.beta.kubernetes.io/aws-load-balancer-scheme: internal
+
+  # REQUIRED before exposing externally — do not leave this unset.
+  # Better: reference a k8s Secret instead of a plaintext value here
+  # (see grafana.admin.existingSecret in the chart's values.yaml).
+  adminPassword: cUvigYR4hmtxrHySIAaPdxbQMpqtIRFkcaofWAgLN0c
+
+alertmanager:
+  service:
+    type: LoadBalancer
+    # annotations:
+    #   service.beta.kubernetes.io/aws-load-balancer-scheme: internal

@@ -352,6 +352,16 @@ resource "aws_eks_node_group" "default" {
   capacity_type = var.capacity_type # ON_DEMAND or SPOT
 
   scaling_config {
+    # NOTE: this used to carry a `lifecycle { ignore_changes =
+    # [scaling_config[0].desired_size] }` block, on the assumption
+    # that a cluster-autoscaler/Karpenter would own desired_size
+    # post-install. Neither is installed in this repo yet, so that
+    # ignore_changes was silently swallowing every attempt to resize
+    # the node group via Terraform (e.g. bumping desired_node_count
+    # in environments/<env>/main.tf did nothing on apply, no error,
+    # no diff shown). Re-add it once an autoscaler is actually
+    # installed and managing desired_size — until then, Terraform
+    # should own it.
     desired_size = var.desired_node_count
     min_size     = var.min_node_count
     max_size     = var.max_node_count
@@ -380,12 +390,6 @@ resource "aws_eks_node_group" "default" {
     aws_security_group_rule.cluster_to_node_https,
     aws_security_group_rule.node_to_cluster_https,
   ]
-
-  lifecycle {
-    # Node group size is often managed by cluster-autoscaler or
-    # Karpenter once installed — don't fight it from Terraform.
-    ignore_changes = [scaling_config[0].desired_size]
-  }
 }
 
 # ── EKS access entry for the caller's IAM identity ──────────────

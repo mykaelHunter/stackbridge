@@ -2,9 +2,9 @@
   "service": "stackbridge",
   "environment": "staging",
   "image": "docker.io/mykaelhunter/stackbridge:latest",
-  "started_at": "2026-07-04 11:16:50.859397",
-  "finished_at": "2026-07-04 11:17:18.182247",
-  "duration": 27.32285,
+  "started_at": "2026-07-04 12:09:08.031446",
+  "finished_at": "2026-07-04 12:10:28.238416",
+  "duration": 80.20697,
   "success": true,
   "events": [
     {
@@ -12,7 +12,7 @@
       "service": "stackbridge",
       "status": "SUCCESS",
       "message": "Docker image built",
-      "timestamp": "2026-07-04 11:16:57.628658"
+      "timestamp": "2026-07-04 12:09:56.790558"
     }
   ]
 }

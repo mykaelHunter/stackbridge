@@ -11,7 +11,16 @@ from stackbridge.core.monitoring import install_monitoring, MonitoringError
          "(e.g. to configure Grafana ingress, retention, resource "
          "requests). Optional — installs with chart defaults if omitted.",
 )
-def bootstrap_monitoring(values_file):
+@click.option(
+    "--timeout",
+    default="10m",
+    show_default=True,
+    help="Helm --timeout for the install. Raised above Helm's 5m "
+         "default because the chart's admission-webhook-patch post-"
+         "install Job can genuinely take longer than that under slow "
+         "image pulls or node scheduling pressure.",
+)
+def bootstrap_monitoring(values_file, timeout):
     """
     One-time, per-cluster bootstrap: installs kube-prometheus-stack
     (Prometheus, Alertmanager, Grafana, and the ServiceMonitor/
@@ -29,7 +38,7 @@ def bootstrap_monitoring(values_file):
     """
 
     try:
-        install_monitoring(values_file=values_file)
+        install_monitoring(values_file=values_file, timeout=timeout)
     except MonitoringError as exc:
         raise click.ClickException(str(exc))
 

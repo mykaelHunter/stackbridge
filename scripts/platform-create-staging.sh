@@ -20,9 +20,6 @@ if [ -z "${SLACK_WEBHOOK:-}" ]; then
     exit 1
 fi
 
-# 4. Now it's perfectly safe to execute
-payload='{"text": "🚀 Hello from your script!"}'
-
 curl -X POST -H 'Content-type: application/json' \
      --data "$payload" \
      "$SLACK_WEBHOOK"
@@ -102,6 +99,7 @@ echo ""
 
 stackbridge environment bootstrap-secrets stackbridge --env staging   # → eso/staging
 stackbridge service deploy stackbridge --env staging
+stackbridge environment bootstrap-monitoring --values-file monitoring-values.yaml
 
 echo ""
 

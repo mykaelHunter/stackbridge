@@ -122,7 +122,7 @@ module "eks" {
   # because NAT is disabled there for cost.
   node_subnet_ids     = module.network.private_subnet_ids
   node_instance_type  = "t3.small"
-  desired_node_count  = 2
+  desired_node_count  = 3
   min_node_count      = 1
   max_node_count      = 3
   capacity_type       = "ON_DEMAND"

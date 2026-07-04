@@ -71,16 +71,28 @@ def monitoring_installed():
     return True
 
 
-def install_monitoring(values_file=None):
-    """Install kube-prometheus-stack via Helm (idempotent)."""
+def install_monitoring(values_file=None, timeout="10m"):
+    """
+    Install or update kube-prometheus-stack via Helm (idempotent).
+
+    Unlike eso.install_eso() (which really is call-once — ESO itself
+    never takes per-environment config), this deliberately does NOT
+    skip when already installed: `helm upgrade --install` is already
+    idempotent and near-instant with no diff, and skipping outright
+    would silently ignore any --values-file passed on a later call
+    (e.g. to turn on LoadBalancer services for Prometheus/Grafana/
+    Alertmanager) with no error — it would just look like the flag
+    did nothing.
+    """
 
     _require_binaries()
 
-    if monitoring_installed():
-        click.echo("✓ kube-prometheus-stack already installed, skipping")
-        return
+    already_installed = monitoring_installed()
 
-    click.echo("Installing kube-prometheus-stack...")
+    if already_installed:
+        click.echo("kube-prometheus-stack already installed — applying update...")
+    else:
+        click.echo("Installing kube-prometheus-stack...")
 
     subprocess.run(
         ["helm", "repo", "add", MONITORING_HELM_REPO_NAME, MONITORING_HELM_REPO_URL],
@@ -91,17 +103,33 @@ def install_monitoring(values_file=None):
     # upgrade --install (not plain install), same rationale as ESO:
     # repairs a cluster left in a half-installed state instead of
     # erroring on "release already exists".
+    #
+    # --timeout is raised from Helm's 5m default because this chart's
+    # post-install hook (Job/kube-prometheus-stack-admission-patch,
+    # which patches the operator's admission webhook CA bundle) can
+    # legitimately take longer than 5m on a slow image pull or under
+    # node scheduling pressure — the default timeout expiring looks
+    # identical to a genuinely stuck/failed job ("context deadline
+    # exceeded"), so if it's still failing at 10m, that's a real
+    # problem with the job (check `kubectl describe pod` in the
+    # monitoring namespace for ImagePullBackOff / Pending), not
+    # something a longer timeout will fix.
     cmd = [
         "helm", "upgrade", "--install", MONITORING_RELEASE_NAME,
         MONITORING_CHART_NAME,
         "--namespace", MONITORING_NAMESPACE,
         "--create-namespace",
+        "--timeout", timeout,
     ]
 
     if values_file is not None:
         cmd.extend(["--values", str(values_file)])
 
     subprocess.run(cmd, check=True)
+
+    if already_installed:
+        click.echo("✓ kube-prometheus-stack updated")
+        return
 
     click.echo("Waiting for monitoring CRDs to become available...")
     for crd in REQUIRED_CRDS:
