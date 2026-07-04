@@ -200,7 +200,7 @@ jobs:
   notify-on-failure:
     name: Notify on failure
     runs-on: ubuntu-latest
-    needs: [lint, build-and-push, update-manifest]
+    needs: [lint, build-and-push]
     if: failure() && github.ref == 'refs/heads/main'
 
     steps:
