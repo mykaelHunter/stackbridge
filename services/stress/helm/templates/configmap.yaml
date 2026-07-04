@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+
+metadata:
+  name: {{ .Chart.Name }}-config
+
+data:
+
+  ENV: {{ required "env is required — pass --set env=<environment> at deploy time" .Values.env | quote }}
