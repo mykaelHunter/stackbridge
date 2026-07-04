@@ -168,7 +168,9 @@ module "eso_manifests" {
   aws_region   = var.aws_region
   role_arn     = module.eks.external_secrets_role_arn
   namespace    = local.environment
-  output_dir   = "${path.root}/../../../services/stackbridge/eso"
+  # Namespaced by environment — see staging/main.tf for why this
+  # can't be a shared path across environments.
+  output_dir   = "${path.root}/../../../services/stackbridge/eso/${local.environment}"
 }
 
 # ── Outputs ───────────────────────────────────────────────────

@@ -2,6 +2,31 @@
 
 set -euo pipefail
 
+# 1. Locate the script directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# 2. Check and source the file
+if [ -f "$SCRIPT_DIR/.env" ]; then
+    source "$SCRIPT_DIR/.env"
+else
+    echo "Error: .env file missing from $SCRIPT_DIR" >&2
+    exit 1
+fi
+
+# 3. Safe-guard check for set -u
+# This syntax checks if the variable is set without triggering the unbound error
+if [ -z "${SLACK_WEBHOOK:-}" ]; then
+    echo "Error: SLACK_WEBHOOK_URL is empty or not defined in your .env file." >&2
+    exit 1
+fi
+
+# 4. Now it's perfectly safe to execute
+payload='{"text": "🚀 Hello from your script!"}'
+
+curl -X POST -H 'Content-type: application/json' \
+     --data "$payload" \
+     "$SLACK_WEBHOOK"
+
 # Create the state bucket
 echo "Creating backend s3 bucket for state locking"
 
@@ -75,6 +100,7 @@ pip install -e .
 
 echo ""
 
+stackbridge environment bootstrap-secrets --env staging   # → eso/staging
 stackbridge service deploy stackbridge --env staging
 
 echo ""

@@ -5,7 +5,7 @@ from pathlib import Path
 from stackbridge.core.paths import REPO_ROOT
 
 
-def deploy_chart(service_name, namespace, image):
+def deploy_chart(service_name, namespace, image, environment):
 
     # Resolved path — same fix as core/docker.py and core/config.py.
     chart = REPO_ROOT / "services" / service_name / "helm"
@@ -28,7 +28,9 @@ def deploy_chart(service_name, namespace, image):
             "--set",
             f"image.repository={repository}",
             "--set",
-            f"image.tag={tag}"
+            f"image.tag={tag}",
+            "--set",
+            f"env={environment}",
         ],
         check=True
     )

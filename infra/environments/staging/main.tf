@@ -127,6 +127,13 @@ module "eks" {
   max_node_count      = 3
   capacity_type       = "ON_DEMAND"
   db_secret_arn       = module.database.secret_arn
+  # Same reasoning as dev/main.tf: must match what eso-manifests
+  # actually renders (ServiceAccount "stackbridge-eso-sa" in the
+  # "staging" namespace), or IRSA's AssumeRoleWithWebIdentity trust
+  # condition rejects the ServiceAccount and ExternalSecret sync
+  # fails with an auth error.
+  external_secrets_namespace       = local.environment
+  external_secrets_service_account = "${local.name}-eso-sa"
   tags                = local.common_tags
 }
 
@@ -138,7 +145,12 @@ module "eso_manifests" {
   environment  = local.environment
   aws_region   = var.aws_region
   role_arn     = module.eks.external_secrets_role_arn
-  output_dir   = "${path.root}/../../../services/stackbridge/eso"
+  namespace    = local.environment
+  # Namespaced by environment — dev and staging both use
+  # service_name "stackbridge", so a shared path here would have
+  # each environment's terraform apply silently overwrite the
+  # other's rendered manifests on disk.
+  output_dir   = "${path.root}/../../../services/stackbridge/eso/${local.environment}"
 }
 
 output "vpc_id" {

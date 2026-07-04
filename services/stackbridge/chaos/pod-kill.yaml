@@ -29,9 +29,9 @@ spec:
         - |
           echo "=== Pod Kill Chaos — stackbridge ==="
           echo "Deleting pods from stackbridge..."
-          kubectl get pods -n stackbridge -l app=stackbridge -o name \
-            | head -2 | xargs kubectl delete -n stackbridge
+          kubectl get pods -n {{NAMESPACE}} -l app=stackbridge -o name \
+            | head -2 | xargs kubectl delete -n {{NAMESPACE}}
           echo "Pods deleted. Watching recovery..."
           sleep 30
-          kubectl get pods -n stackbridge -l app=stackbridge
+          kubectl get pods -n {{NAMESPACE}} -l app=stackbridge
           echo "Pod kill experiment complete."

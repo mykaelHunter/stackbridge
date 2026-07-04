@@ -126,6 +126,7 @@ def scaffold(service_name):
         "helm/templates/deployment.yaml":       TPLS / "helm/templates/deployment.yaml.tpl",
         "helm/templates/service.yaml":          TPLS / "helm/templates/service.yaml.tpl",
         "helm/templates/ingress.yaml":          TPLS / "helm/templates/ingress.yaml.tpl",
+        "helm/templates/configmap.yaml":        TPLS / "helm/templates/configmap.yaml.tpl",
 
         # ── ArgoCD ───────────────────────────────────────────
         "argocd/application.yaml":  TPLS / "argocd/application.yaml.tpl",
