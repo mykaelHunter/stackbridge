@@ -9,3 +9,4 @@ psycopg2-binary==2.9.12
 requests==2.34.2
 PyYAML==6.0.3
 gunicorn==26.0.0
+prometheus-client==0.21.1

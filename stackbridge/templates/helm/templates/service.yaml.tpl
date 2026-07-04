@@ -12,6 +12,11 @@ spec:
 
   ports:
 
-  - port: {{ .Values.service.port }}
+  # Named so ServiceMonitor (helm/templates/servicemonitor.yaml) can
+  # target it via spec.endpoints[].port, which selects by port *name*,
+  # not number.
+  - name: http
+
+    port: {{ .Values.service.port }}
 
     targetPort: {{ .Values.containerPort }}

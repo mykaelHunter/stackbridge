@@ -96,10 +96,12 @@ def scaffold(service_name):
         app_py_src      = real_app / "app.py"
         dockerfile_src  = real_app / "Dockerfile"
         requirements_src = real_app / "requirements.txt"
+        gunicorn_conf_src = real_app / "gunicorn.conf.py"
     else:
         app_py_src      = TPLS / "app.py.tpl"
         dockerfile_src  = TPLS / "Dockerfile.tpl"
         requirements_src = TPLS / "requirements.txt.tpl"
+        gunicorn_conf_src = TPLS / "gunicorn.conf.py.tpl"
 
     # --------------------------------------------------
     # Template mapping
@@ -110,6 +112,7 @@ def scaffold(service_name):
         "app/app.py":           app_py_src,
         "app/requirements.txt": requirements_src,
         "app/Dockerfile":       dockerfile_src,
+        "app/gunicorn.conf.py": gunicorn_conf_src,
 
         # ── Documentation ────────────────────────────────────
         "README.md":            TPLS / "README.md.tpl",
@@ -127,6 +130,7 @@ def scaffold(service_name):
         "helm/templates/service.yaml":          TPLS / "helm/templates/service.yaml.tpl",
         "helm/templates/ingress.yaml":          TPLS / "helm/templates/ingress.yaml.tpl",
         "helm/templates/configmap.yaml":        TPLS / "helm/templates/configmap.yaml.tpl",
+        "helm/templates/servicemonitor.yaml":   TPLS / "helm/templates/servicemonitor.yaml.tpl",
 
         # ── ArgoCD ───────────────────────────────────────────
         "argocd/application.yaml":  TPLS / "argocd/application.yaml.tpl",

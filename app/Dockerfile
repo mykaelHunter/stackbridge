@@ -43,6 +43,16 @@ COPY --from=builder /install /usr/local
 
 # Copy only the application source with correct non-root permissions
 COPY --chown=appuser:appgroup app.py .
+COPY --chown=appuser:appgroup gunicorn.conf.py .
+
+# Directory prometheus_client's multiprocess mode writes per-worker
+# metric files to (see gunicorn.conf.py child_exit hook and app.py's
+# /metrics route). Must be writable by appuser and must NOT persist
+# across container restarts with stale data from a previous process
+# tree, which is why it's created fresh here rather than mounted as
+# a volume.
+RUN mkdir -p /tmp/prometheus_multiproc_dir && \
+    chown appuser:appgroup /tmp/prometheus_multiproc_dir
 
 # Ensure the application directory itself is owned by the non-root user
 RUN chown appuser:appgroup /app
@@ -57,7 +67,8 @@ ENV HOME=/app \
     DB_USER=admin \
     DB_NAME=stackbridge \
     PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1
+    PYTHONDONTWRITEBYTECODE=1 \
+    PROMETHEUS_MULTIPROC_DIR=/tmp/prometheus_multiproc_dir
 
 EXPOSE 5000
 
@@ -65,7 +76,10 @@ EXPOSE 5000
 USER appuser
 
 # gunicorn replaces app.run(debug=True).
+# --config picks up gunicorn.conf.py's child_exit hook, required for
+# prometheus_client multiprocess mode cleanup (see that file).
 CMD ["gunicorn", \
+     "--config", "gunicorn.conf.py", \
      "--bind", "0.0.0.0:5000", \
      "--workers", "2", \
      "--timeout", "120", \

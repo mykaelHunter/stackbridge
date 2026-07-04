@@ -15,17 +15,68 @@ audit finding — hardcoded credential in source).
 """
 import os
 import logging
+import time
 from contextlib import contextmanager
 
 import psycopg2
 from psycopg2.extras import RealDictCursor
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, Response
+from prometheus_client import (
+    Counter, Histogram, CONTENT_TYPE_LATEST,
+    CollectorRegistry, multiprocess, generate_latest,
+)
 
 # ── Logging ───────────────────────────────────────────────────
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
+
+# ── Metrics ───────────────────────────────────────────────────
+# PROMETHEUS_MULTIPROC_DIR must be set (see Dockerfile ENV) because
+# gunicorn runs multiple worker processes per pod (--workers 2).
+# Without multiprocess mode, each worker keeps its own independent
+# in-memory counters, and a single /metrics scrape only ever sees
+# whichever one worker happened to handle that request — silently
+# undercounting request totals rather than erroring, which is worse
+# than a crash because it looks like real, self-consistent data.
+REQUEST_COUNT = Counter(
+    "http_requests_total",
+    "Total HTTP requests",
+    ["method", "path", "status"],
+)
+REQUEST_LATENCY = Histogram(
+    "http_request_duration_seconds",
+    "HTTP request latency",
+    ["method", "path"],
+)
+
+
+@app.before_request
+def _start_timer():
+    request._metrics_start_time = time.time()
+
+
+@app.after_request
+def _record_metrics(response):
+    # request.path (not request.url_rule) is intentional here to keep
+    # the stub simple, but note this means unmatched/404 paths each
+    # get their own label value — fine at this app's current size,
+    # but would need to switch to request.url_rule.rule (falling back
+    # to "unmatched") if routes ever take path parameters at scale,
+    # to avoid unbounded cardinality in Prometheus.
+    latency = time.time() - getattr(request, "_metrics_start_time", time.time())
+    REQUEST_LATENCY.labels(request.method, request.path).observe(latency)
+    REQUEST_COUNT.labels(request.method, request.path, response.status_code).inc()
+    return response
+
+
+@app.route("/metrics")
+def metrics():
+    registry = CollectorRegistry()
+    multiprocess.MultiProcessCollector(registry)
+    return Response(generate_latest(registry), mimetype=CONTENT_TYPE_LATEST)
+
 
 # ── Database configuration ────────────────────────────────────
 # All values injected via environment variables.
