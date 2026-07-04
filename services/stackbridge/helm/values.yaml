@@ -1,8 +1,8 @@
 replicaCount: 2
 
 image:
-  repository: "{{IMAGE_REPOSITORY}}"
-  tag: "{{IMAGE_TAG}}"
+  repository: "mykaelhunter/stackbridge"
+  tag: "sha-c1851bf"
   pullPolicy: Always
 
 service:
